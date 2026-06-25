@@ -1,0 +1,276 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id          String   @id @default(uuid())
+  firebaseUid String   @unique
+  email       String   @unique
+  name        String
+  avatar      String?
+  role        String   @default("STUDENT")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  managedUniversities University[]   @relation("UniversityAdmin")
+  managedInstitutes   Institute[]    @relation("InstituteAdmin")
+  enrollments         Enrollment[]
+  notifications       Notification[]
+  taughtCourses       Course[]       @relation("CourseInstructor")
+  batchEnrollments    BatchEnrollment[]
+  surveyResponses     SurveyResponse[]
+
+  @@map("users")
+}
+
+model University {
+  id          String   @id @default(uuid())
+  name        String
+  code        String   @unique
+  logo        String?
+  address     String?
+  website     String?
+  email       String?
+  phone       String?
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  adminId String?
+  admin   User?   @relation("UniversityAdmin", fields: [adminId], references: [id])
+
+  courses    Course[]
+  institutes Institute[]
+
+  @@map("universities")
+}
+
+model Institute {
+  id          String   @id @default(uuid())
+  name        String
+  code        String   @unique
+  logo        String?
+  address     String?
+  website     String?
+  email       String?
+  phone       String?
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  universityId String
+  university   University @relation(fields: [universityId], references: [id])
+
+  adminId String?
+  admin   User?   @relation("InstituteAdmin", fields: [adminId], references: [id])
+
+  programs    Program[]
+
+  @@map("institutes")
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  thumbnail   String?
+  duration    Int?
+  isPublished Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  universityId String
+  university   University @relation(fields: [universityId], references: [id])
+
+  instructorId String?
+  instructor   User?   @relation("CourseInstructor", fields: [instructorId], references: [id])
+
+  enrollments Enrollment[]
+
+  semesterId  String?
+  semester    Semester? @relation(fields: [semesterId], references: [id], onDelete: SetNull)
+
+  @@map("courses")
+}
+
+model Enrollment {
+  id        String   @id @default(uuid())
+  status    String   @default("PENDING")
+  progress  Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
+  @@map("enrollments")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  title     String
+  message   String
+  type      String   @default("INFO")
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model Program {
+  id           String      @id @default(uuid())
+  name         String
+  code         String      @unique
+  description  String?
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  instituteId  String
+  institute    Institute   @relation(fields: [instituteId], references: [id], onDelete: Cascade)
+
+  batches      Batch[]
+
+  @@map("programs")
+}
+
+model Batch {
+  id           String      @id @default(uuid())
+  name         String
+  code         String      @unique
+  description  String?
+  startDate    DateTime?
+  endDate      DateTime?
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  programId    String
+  program      Program     @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  semesters     Semester[]
+  surveys       Survey[]
+  announcements BatchAnnouncement[]
+  enrollments   BatchEnrollment[]
+
+  @@map("batches")
+}
+
+model Semester {
+  id           String      @id @default(uuid())
+  name         String
+  number       Int
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  batchId      String
+  batch        Batch       @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  courses      Course[]
+
+  @@map("semesters")
+}
+
+model BatchAnnouncement {
+  id           String      @id @default(uuid())
+  title        String
+  content      String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  batchId      String
+  batch        Batch       @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@map("batch_announcements")
+}
+
+model BatchEnrollment {
+  id           String      @id @default(uuid())
+  enrolledAt   DateTime    @default(now())
+
+  batchId      String
+  batch        Batch       @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, userId])
+  @@map("batch_enrollments")
+}
+
+model Survey {
+  id           String      @id @default(uuid())
+  title        String
+  description  String?
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  batchId      String
+  batch        Batch       @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  questions    SurveyQuestion[]
+  responses    SurveyResponse[]
+
+  @@map("surveys")
+}
+
+model SurveyQuestion {
+  id           String      @id @default(uuid())
+  text         String
+  type         String      @default("TEXT") // e.g. TEXT, MULTIPLE_CHOICE, RATING
+  options      String?     // Comma-separated or JSON string for multiple choice options
+  isRequired   Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  surveyId     String
+  survey       Survey      @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  answers      SurveyAnswer[]
+
+  @@map("survey_questions")
+}
+
+model SurveyResponse {
+  id           String      @id @default(uuid())
+  submittedAt  DateTime    @default(now())
+
+  surveyId     String
+  survey       Survey      @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  answers      SurveyAnswer[]
+
+  @@unique([surveyId, userId])
+  @@map("survey_responses")
+}
+
+model SurveyAnswer {
+  id           String      @id @default(uuid())
+  answer       String      // User response text or selected option
+
+  responseId   String
+  response     SurveyResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  questionId   String
+  question     SurveyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([responseId, questionId])
+  @@map("survey_answers")
+}

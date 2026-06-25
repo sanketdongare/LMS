@@ -1,0 +1,149 @@
+@import "tailwindcss";
+
+:root {
+  --primary: #0891b2; /* cyan-600 */
+  --primary-light: #22d3ee; /* cyan-400 */
+  --primary-dark: #0e7490; /* cyan-700 */
+  --secondary: #0d9488; /* teal-600 */
+  --bg-base: #f8fafc; /* slate-50 */
+  --bg-card: #ffffff; /* white */
+  --bg-elevated: #f1f5f9; /* slate-100 */
+  --border: rgba(8, 145, 178, 0.15); /* cyan light border */
+  --text-primary: #0f172a; /* slate-900 */
+  --text-secondary: #334155; /* slate-700 */
+  --text-muted: #64748b; /* slate-500 */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #0891b2;
+  --gradient-primary: linear-gradient(135deg, #0891b2, #0d9488);
+  --gradient-secondary: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  --shadow-glow: 0 0 30px rgba(8, 145, 178, 0.15);
+  --shadow-card: 0 4px 20px rgba(15, 23, 42, 0.05);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', 'Roboto', sans-serif;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: rgba(8, 145, 178, 0.4); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(8, 145, 178, 0.7); }
+
+/* Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(8, 145, 178, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(8, 145, 178, 0.6); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Utility classes */
+.animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
+.animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+.animate-pulse-glow { animation: pulse-glow 2s infinite; }
+
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+}
+
+.gradient-text {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-bg {
+  background: var(--gradient-primary);
+}
+
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+  border-color: rgba(8, 145, 178, 0.4);
+}
+
+/* Page wrapper */
+.page-content {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+/* Skeleton loader */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+  border-radius: 8px;
+}
+
+/* Stats card gradient variants */
+.stat-gradient-indigo { background: linear-gradient(135deg, rgba(8, 145, 178, 0.15), rgba(8, 145, 178, 0.03)); }
+.stat-gradient-purple { background: linear-gradient(135deg, rgba(13, 148, 136, 0.15), rgba(13, 148, 136, 0.03)); }
+.stat-gradient-emerald { background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.03)); }
+.stat-gradient-amber { background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.03)); }
+.stat-gradient-blue { background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.03)); }
+
+/* Sidebar active item */
+.sidebar-item-active {
+  background: linear-gradient(135deg, rgba(8, 145, 178, 0.15), rgba(13, 148, 136, 0.1));
+  border-left: 3px solid #0891b2;
+}
+
+/* Table row hover */
+.table-row-hover:hover {
+  background: rgba(8, 145, 178, 0.06) !important;
+}
+
+/* Notification dot pulse */
+.notification-dot {
+  animation: pulse-glow 1.5s infinite;
+}
+
+/* Auth page background */
+.auth-bg {
+  background: radial-gradient(ellipse at 20% 50%, rgba(8, 145, 178, 0.08) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 20%, rgba(13, 148, 136, 0.06) 0%, transparent 50%),
+              var(--bg-base);
+}
