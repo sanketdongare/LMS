@@ -25,6 +25,11 @@ model User {
   taughtCourses       Course[]       @relation("CourseInstructor")
   batchEnrollments    BatchEnrollment[]
   surveyResponses     SurveyResponse[]
+  
+  submissions         Submission[]
+  topics              DiscussionTopic[]
+  posts               DiscussionPost[]
+  quizAttempts        QuizAttempt[]
 
   @@map("users")
 }
@@ -98,6 +103,14 @@ model Course {
 
   semesterId  String?
   semester    Semester? @relation(fields: [semesterId], references: [id], onDelete: SetNull)
+
+  surveys       Survey[]
+  assignments   Assignment[]
+  announcements CourseAnnouncement[]
+  outcomes      CourseOutcome[]
+  topics        DiscussionTopic[]
+  agent         CourseAgent?
+  units         CourseUnit[]
 
   @@map("courses")
 }
@@ -222,8 +235,10 @@ model Survey {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
-  batchId      String
-  batch        Batch       @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  batchId      String?
+  batch        Batch?      @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  courseId     String?
+  course       Course?     @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   questions    SurveyQuestion[]
   responses    SurveyResponse[]
@@ -273,4 +288,215 @@ model SurveyAnswer {
 
   @@unique([responseId, questionId])
   @@map("survey_answers")
+}
+
+model Assignment {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  dueDate     DateTime?
+  points      Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  rubric      Rubric?
+  submissions Submission[]
+
+  @@map("assignments")
+}
+
+model Rubric {
+  id           String   @id @default(uuid())
+  criteriaJson String   // JSON string defining criteria and levels
+  
+  assignmentId String   @unique
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@map("rubrics")
+}
+
+model Submission {
+  id           String   @id @default(uuid())
+  content      String?
+  fileUrl      String?
+  grade        Float?
+  feedback     String?
+  submittedAt  DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assignmentId String
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, userId])
+  @@map("submissions")
+}
+
+model CourseAnnouncement {
+  id           String      @id @default(uuid())
+  title        String
+  content      String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  courseId     String
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@map("course_announcements")
+}
+
+model CourseOutcome {
+  id           String      @id @default(uuid())
+  description  String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  courseId     String
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@map("course_outcomes")
+}
+
+model DiscussionTopic {
+  id           String      @id @default(uuid())
+  title        String
+  content      String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  courseId     String
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  authorId     String
+  author       User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  posts        DiscussionPost[]
+
+  @@map("discussion_topics")
+}
+
+model DiscussionPost {
+  id           String      @id @default(uuid())
+  content      String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  topicId      String
+  topic        DiscussionTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  authorId     String
+  author       User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("discussion_posts")
+}
+
+model CourseAgent {
+  id           String      @id @default(uuid())
+  name         String      @default("Course Assistant")
+  systemPrompt String
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  courseId     String      @unique
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@map("course_agents")
+}
+
+model CourseUnit {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  order       Int      @default(0)
+  htmlContent String?  @default("")
+  cssContent  String?  @default("")
+  jsContent   String?  @default("")
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  quizzes     Quiz[]
+
+  @@map("course_units")
+}
+
+model Quiz {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  timeLimit   Int?     // minutes, null = unlimited
+  maxAttempts Int      @default(1)
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  unitId      String
+  unit        CourseUnit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  questions   QuizQuestion[]
+  attempts    QuizAttempt[]
+
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id            String   @id @default(uuid())
+  type          String   // MCQ or SAQ
+  questionText  String
+  optionsJson   String?  // JSON array of strings, MCQ only
+  correctAnswer String?  // MCQ: the correct option; SAQ: model answer
+  points        Int      @default(1)
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  quizId        String
+  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  answers       QuizAnswer[]
+
+  @@map("quiz_questions")
+}
+
+model QuizAttempt {
+  id        String   @id @default(uuid())
+  score     Float?
+  maxScore  Float?
+  status    String   @default("IN_PROGRESS") // IN_PROGRESS, SUBMITTED, GRADED
+  startedAt DateTime @default(now())
+  submittedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  quizId    String
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  answers   QuizAnswer[]
+
+  @@map("quiz_attempts")
+}
+
+model QuizAnswer {
+  id          String   @id @default(uuid())
+  answerText  String
+  isCorrect   Boolean?
+  pointsAwarded Float?
+  feedback    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  attemptId   String
+  attempt     QuizAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId  String
+  question    QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_answers")
 }

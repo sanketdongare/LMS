@@ -2,20 +2,22 @@
 import { Box, Grid, Card, CardContent, Typography, Skeleton, Avatar, Chip } from '@mui/material';
 import {
   School, People, MenuBook, TrendingUp, Add, AccountBalance,
-  AdminPanelSettings, Class, AssignmentTurnedIn, BookmarkBorder,
+  AdminPanelSettings, Class, AssignmentTurnedIn, BookmarkBorder, Settings,
 } from '@mui/icons-material';
 import { useGetUniversityStatsQuery } from '@/store/slices/universitySlice';
 import { useAppSelector } from '@/store/store';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 
+import { CardActionArea } from '@mui/material';
+
 const StatCard = ({
-  title, value, subtitle, icon, gradient, loading,
+  title, value, subtitle, icon, gradient, loading, href,
 }: {
   title: string; value: string | number; subtitle?: string;
-  icon: React.ReactNode; gradient: string; loading?: boolean;
-}) => (
-  <Card className="card-hover" sx={{ height: '100%' }}>
+  icon: React.ReactNode; gradient: string; loading?: boolean; href?: string;
+}) => {
+  const content = (
     <CardContent sx={{ p: 3 }}>
       {loading ? (
         <>
@@ -38,8 +40,18 @@ const StatCard = ({
         </>
       )}
     </CardContent>
-  </Card>
-);
+  );
+
+  return (
+    <Card className="card-hover" sx={{ height: '100%' }}>
+      {href ? (
+        <CardActionArea component={Link} href={href} sx={{ height: '100%' }}>
+          {content}
+        </CardActionArea>
+      ) : content}
+    </Card>
+  );
+};
 
 export default function DashboardPage() {
   const { user } = useAppSelector((s) => s.auth);
@@ -74,6 +86,7 @@ export default function DashboardPage() {
               icon={<School sx={{ color: '#6366f1', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(99,102,241,0.25), rgba(99,102,241,0.05))"
               loading={isLoading}
+              href="/dashboard/universities"
             />
           </Grid>
           <Grid item xs={12} sm={6} lg={3}>
@@ -84,6 +97,7 @@ export default function DashboardPage() {
               icon={<AccountBalance sx={{ color: '#a855f7', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(168,85,247,0.25), rgba(168,85,247,0.05))"
               loading={isLoading}
+              href="/dashboard/institutes"
             />
           </Grid>
           <Grid item xs={12} sm={6} lg={3}>
@@ -94,6 +108,7 @@ export default function DashboardPage() {
               icon={<MenuBook sx={{ color: '#10b981', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(16,185,129,0.25), rgba(16,185,129,0.05))"
               loading={isLoading}
+              href="/dashboard/courses"
             />
           </Grid>
           <Grid item xs={12} sm={6} lg={3}>
@@ -104,6 +119,7 @@ export default function DashboardPage() {
               icon={<People sx={{ color: '#f59e0b', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(245,158,11,0.25), rgba(245,158,11,0.05))"
               loading={isLoading}
+              href="/dashboard/users"
             />
           </Grid>
         </Grid>
@@ -185,6 +201,24 @@ export default function DashboardPage() {
                       </Box>
                     </Box>
                   </Link>
+                  <Link href="/dashboard/programs" style={{ textDecoration: 'none' }}>
+                    <Box sx={{ p: 2, borderRadius: 2, border: '1px solid rgba(8, 145, 178, 0.2)', cursor: 'pointer', transition: 'all 0.2s', '&:hover': { borderColor: 'primary.main', background: 'rgba(8, 145, 178, 0.08)', transform: 'translateX(4px)' }, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Class sx={{ color: 'primary.main' }} />
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>Manage Programs</Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>Add academic plans & schedules</Typography>
+                      </Box>
+                    </Box>
+                  </Link>
+                  <Link href="/dashboard/courses" style={{ textDecoration: 'none' }}>
+                    <Box sx={{ p: 2, borderRadius: 2, border: '1px solid rgba(16,185,129,0.2)', cursor: 'pointer', transition: 'all 0.2s', '&:hover': { borderColor: 'success.main', background: 'rgba(16,185,129,0.08)', transform: 'translateX(4px)' }, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <MenuBook sx={{ color: 'success.main' }} />
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>Manage Courses</Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>Track curriculum and syllabus</Typography>
+                      </Box>
+                    </Box>
+                  </Link>
                   <Link href="/dashboard/users" style={{ textDecoration: 'none' }}>
                     <Box sx={{ p: 2, borderRadius: 2, border: '1px solid rgba(245,158,11,0.2)', cursor: 'pointer', transition: 'all 0.2s', '&:hover': { borderColor: 'warning.main', background: 'rgba(245,158,11,0.08)', transform: 'translateX(4px)' }, display: 'flex', alignItems: 'center', gap: 1.5 }}>
                       <People sx={{ color: 'warning.main' }} />
@@ -228,6 +262,7 @@ export default function DashboardPage() {
               icon={<Class sx={{ color: '#0891b2', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(8, 145, 178, 0.25), rgba(8, 145, 178, 0.05))"
               loading={isLoading}
+              href="/dashboard/programs"
             />
           </Grid>
           <Grid item xs={12} sm={6} lg={3}>
@@ -238,6 +273,7 @@ export default function DashboardPage() {
               icon={<School sx={{ color: '#a855f7', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(168, 85, 247, 0.05))"
               loading={isLoading}
+              href="/dashboard/programs"
             />
           </Grid>
           <Grid item xs={12} sm={6} lg={3}>
@@ -248,6 +284,7 @@ export default function DashboardPage() {
               icon={<People sx={{ color: '#10b981', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(16, 185, 129, 0.05))"
               loading={isLoading}
+              href="/dashboard/users"
             />
           </Grid>
           <Grid item xs={12} sm={6} lg={3}>
@@ -258,6 +295,7 @@ export default function DashboardPage() {
               icon={<AssignmentTurnedIn sx={{ color: '#f59e0b', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(245, 158, 11, 0.05))"
               loading={isLoading}
+              href="/dashboard/programs"
             />
           </Grid>
         </Grid>
@@ -421,6 +459,7 @@ export default function DashboardPage() {
               icon={<AccountBalance sx={{ color: '#a855f7', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(168,85,247,0.25), rgba(168,85,247,0.05))"
               loading={isLoading}
+              href="/dashboard/institutes"
             />
           </Grid>
           <Grid item xs={12} sm={6} lg={3}>
@@ -431,6 +470,7 @@ export default function DashboardPage() {
               icon={<MenuBook sx={{ color: '#10b981', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(16,185,129,0.25), rgba(16,185,129,0.05))"
               loading={isLoading}
+              href="/dashboard/courses"
             />
           </Grid>
           <Grid item xs={12} sm={6} lg={3}>
@@ -441,6 +481,7 @@ export default function DashboardPage() {
               icon={<AdminPanelSettings sx={{ color: '#38bdf8', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(56,189,248,0.25), rgba(56,189,248,0.05))"
               loading={isLoading}
+              href="/dashboard/users"
             />
           </Grid>
           <Grid item xs={12} sm={6} lg={3}>
@@ -451,6 +492,7 @@ export default function DashboardPage() {
               icon={<People sx={{ color: '#ec4899', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(236,72,153,0.25), rgba(236,72,153,0.05))"
               loading={isLoading}
+              href="/dashboard/users"
             />
           </Grid>
         </Grid>
@@ -571,6 +613,7 @@ export default function DashboardPage() {
             icon={<Class sx={{ color: '#10b981', fontSize: 24 }} />}
             gradient="linear-gradient(135deg, rgba(16,185,129,0.25), rgba(16,185,129,0.05))"
             loading={isLoading}
+            href="/dashboard/courses"
           />
         </Grid>
         <Grid item xs={12} sm={6} lg={4}>
@@ -581,6 +624,7 @@ export default function DashboardPage() {
             icon={<BookmarkBorder sx={{ color: '#0ea5e9', fontSize: 24 }} />}
             gradient="linear-gradient(135deg, rgba(14,165,233,0.25), rgba(14,165,233,0.05))"
             loading={isLoading}
+            href="/dashboard/courses"
           />
         </Grid>
         <Grid item xs={12} sm={6} lg={4}>
@@ -591,6 +635,7 @@ export default function DashboardPage() {
             icon={<AssignmentTurnedIn sx={{ color: '#14b8a6', fontSize: 24 }} />}
             gradient="linear-gradient(135deg, rgba(20,184,166,0.25), rgba(20,184,166,0.05))"
             loading={isLoading}
+            href="/dashboard/courses"
           />
         </Grid>
       </Grid>

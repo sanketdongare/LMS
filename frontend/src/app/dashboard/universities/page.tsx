@@ -4,14 +4,15 @@ import {
   Box, Button, Typography, TextField, InputAdornment, Chip, Avatar,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   TablePagination, IconButton, Tooltip, Skeleton, Menu, MenuItem,
-  Dialog, DialogTitle, DialogContent, DialogActions, Alert,
+  Dialog, DialogTitle, DialogContent, DialogActions, Alert, Grid, Card, CardContent,
 } from '@mui/material';
 import {
   Add, Search, Edit, Delete, MoreVert, School, Refresh, Block,
-  CheckCircle, Cancel, FilterList,
+  CheckCircle, Cancel, FilterList, TrendingUp, MenuBook, PowerSettingsNew,
 } from '@mui/icons-material';
 import {
   useGetUniversitiesQuery,
+  useGetUniversityStatsQuery,
   useDeleteUniversityMutation,
   useDeleteUniversityPermanentMutation,
 } from '@/store/slices/universitySlice';
@@ -20,6 +21,29 @@ import { useAppSelector } from '@/store/store';
 import UniversityFormModal from '@/components/universities/UniversityFormModal';
 import { formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
+
+// Mini stat card for dashboard overview
+function StatCard({ label, value, icon, gradient, loading }: {
+  label: string; value: string | number; icon: React.ReactNode; gradient: string; loading?: boolean;
+}) {
+  return (
+    <Card sx={{ borderRadius: 3, background: gradient, border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
+      <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: '16px !important' }}>
+        <Box sx={{ p: 1.2, borderRadius: 2, background: 'rgba(255,255,255,0.15)', display: 'flex' }}>
+          {icon}
+        </Box>
+        <Box>
+          {loading ? (
+            <Skeleton variant="text" width={50} height={32} sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} />
+          ) : (
+            <Typography variant="h5" fontWeight={800} color="white">{value}</Typography>
+          )}
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500 }}>{label}</Typography>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function UniversitiesPage() {
   const { user } = useAppSelector((s) => s.auth);
@@ -40,6 +64,9 @@ export default function UniversitiesPage() {
     limit: rowsPerPage,
     search,
   });
+
+  const { data: statsRes, isLoading: statsLoading } = useGetUniversityStatsQuery();
+  const stats = statsRes?.data;
 
   const [deleteUniversity, { isLoading: isDeleting }] = useDeleteUniversityMutation();
   const [deleteUniversityPermanent, { isLoading: isDeletingPermanent }] = useDeleteUniversityPermanentMutation();
@@ -87,16 +114,59 @@ export default function UniversitiesPage() {
 
   return (
     <Box className="page-content">
-      {/* Page Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4, flexWrap: 'wrap', gap: 2 }}>
-        <Box>
-          <Typography variant="h4" fontWeight={700}>
-            <span className="gradient-text">Universities</span>
-          </Typography>
-          <Typography variant="body2" color="text.secondary" mt={0.5}>
-            Manage all universities in the SDLMS platform
-          </Typography>
-        </Box>
+      {/* ── Dashboard Header ── */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" fontWeight={700}>
+          <span className="gradient-text">Universities</span>
+        </Typography>
+        <Typography variant="body2" color="text.secondary" mt={0.5}>
+          Manage all universities registered on the SDLMS platform
+        </Typography>
+      </Box>
+
+      {/* ── Stat Cards ── */}
+      <Grid container spacing={2.5} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            label="Total Universities"
+            value={stats?.total ?? 0}
+            icon={<School sx={{ color: 'white', fontSize: 22 }} />}
+            gradient="linear-gradient(135deg, #6366f1 0%, #a855f7 100%)"
+            loading={statsLoading}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            label="Active"
+            value={stats?.active ?? 0}
+            icon={<CheckCircle sx={{ color: 'white', fontSize: 22 }} />}
+            gradient="linear-gradient(135deg, #10b981 0%, #059669 100%)"
+            loading={statsLoading}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            label="Inactive"
+            value={stats?.inactive ?? 0}
+            icon={<PowerSettingsNew sx={{ color: 'white', fontSize: 22 }} />}
+            gradient="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
+            loading={statsLoading}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            label="Total Courses"
+            value={stats?.totalCourses ?? 0}
+            icon={<MenuBook sx={{ color: 'white', fontSize: 22 }} />}
+            gradient="linear-gradient(135deg, #0891b2 0%, #0e7490 100%)"
+            loading={statsLoading}
+          />
+        </Grid>
+      </Grid>
+
+      {/* ── Page Actions ── */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Typography variant="h6" fontWeight={600}>All Universities</Typography>
         <Box sx={{ display: 'flex', gap: 1.5 }}>
           <Tooltip title="Refresh">
             <span>

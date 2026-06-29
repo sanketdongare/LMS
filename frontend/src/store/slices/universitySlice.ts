@@ -20,13 +20,8 @@ export interface University {
   updatedAt: string;
 }
 
-export interface UniversityStats {
-  total: number;
-  active: number;
-  inactive: number;
-  totalCourses: number;
-  recentlyAdded: University[];
-}
+// Using any here because the /stats endpoint returns polymorphic shapes based on role
+export type UniversityStats = any;
 
 interface UniversityState {
   selectedUniversity: University | null;

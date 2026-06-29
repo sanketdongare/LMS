@@ -5,7 +5,6 @@ async function main() {
   console.log('🌱 Starting seed...');
 
   // Create a demo super admin user
-  // NOTE: In production, create via Firebase Auth first, then use the real firebaseUid
   const superAdmin = await prisma.user.upsert({
     where: { email: 'admin@sdlms.com' },
     update: {
@@ -13,7 +12,7 @@ async function main() {
       firebaseUid: 'demo-super-admin-uid',
     },
     create: {
-      firebaseUid: 'demo-super-admin-uid', // Replace with real Firebase UID
+      firebaseUid: 'demo-super-admin-uid',
       email: 'admin@sdlms.com',
       name: 'Super Admin',
       role: 'SUPER_ADMIN',
@@ -21,11 +20,43 @@ async function main() {
   });
   console.log('✅ Created super admin:', superAdmin.email);
 
+  // Create a demo university admin
+  const universityAdmin = await prisma.user.upsert({
+    where: { email: 'uniadmin@sdlms.com' },
+    update: {
+      role: 'UNIVERSITY_ADMIN',
+      firebaseUid: 'demo-uni-admin-uid',
+    },
+    create: {
+      firebaseUid: 'demo-uni-admin-uid',
+      email: 'uniadmin@sdlms.com',
+      name: 'University Admin',
+      role: 'UNIVERSITY_ADMIN',
+    },
+  });
+  console.log('✅ Created university admin:', universityAdmin.email);
+
+  // Create a demo institute admin
+  const instituteAdmin = await prisma.user.upsert({
+    where: { email: 'instadmin@sdlms.com' },
+    update: {
+      role: 'INSTITUTE_ADMIN',
+      firebaseUid: 'demo-inst-admin-uid',
+    },
+    create: {
+      firebaseUid: 'demo-inst-admin-uid',
+      email: 'instadmin@sdlms.com',
+      name: 'Institute Admin',
+      role: 'INSTITUTE_ADMIN',
+    },
+  });
+  console.log('✅ Created institute admin:', instituteAdmin.email);
+
   // Create demo universities
   const universities = await Promise.all([
     prisma.university.upsert({
       where: { code: 'MIT' },
-      update: {},
+      update: { adminId: universityAdmin.id },
       create: {
         name: 'Massachusetts Institute of Technology',
         code: 'MIT',
@@ -33,7 +64,7 @@ async function main() {
         website: 'https://www.mit.edu',
         address: '77 Massachusetts Ave, Cambridge, MA 02139',
         description: 'A world-renowned research university dedicated to advancing knowledge.',
-        adminId: superAdmin.id,
+        adminId: universityAdmin.id,
       },
     }),
     prisma.university.upsert({
@@ -64,7 +95,26 @@ async function main() {
   ]);
   console.log(`✅ Created ${universities.length} universities`);
 
+  // Create demo institute under MIT
+  const mitUni = universities.find((u) => u.code === 'MIT');
+  const institute = await prisma.institute.upsert({
+    where: { code: 'MIT-CS' },
+    update: { adminId: instituteAdmin.id },
+    create: {
+      name: 'MIT Computer Science & AI Lab',
+      code: 'MIT-CS',
+      email: 'cs-admin@mit.edu',
+      website: 'https://csail.mit.edu',
+      address: 'Stata Center, 32 Vassar St, Cambridge, MA 02139',
+      description: 'The computer science and artificial intelligence research hub at MIT.',
+      universityId: mitUni.id,
+      adminId: instituteAdmin.id,
+    },
+  });
+  console.log('✅ Created demo institute:', institute.name);
+
   // Notifications
+  await prisma.notification.deleteMany({ where: { userId: superAdmin.id } });
   await prisma.notification.createMany({
     data: [
       {
@@ -76,7 +126,7 @@ async function main() {
       {
         userId: superAdmin.id,
         title: 'Seed Complete',
-        message: '3 universities have been created for you to explore.',
+        message: '3 universities and 1 institute have been created for you to explore.',
         type: 'INFO',
       },
     ],
@@ -84,7 +134,6 @@ async function main() {
   console.log('✅ Created sample notifications');
 
   console.log('\n🎉 Seed completed successfully!');
-  console.log('ℹ️  NOTE: Update firebaseUid in the seed to match your real Firebase user.');
 }
 
 main()

@@ -8,6 +8,10 @@ const { Server } = require('socket.io');
 require('dotenv').config();
 
 const { initializeSocket } = require('./src/socket/socketHandler');
+const { initializeFirebase } = require('./src/config/firebase');
+
+// Eagerly initialize Firebase Admin SDK with real credentials
+initializeFirebase();
 const authRoutes = require('./src/routes/auth.routes');
 const universityRoutes = require('./src/routes/university.routes');
 const instituteRoutes = require('./src/routes/institute.routes');
@@ -17,6 +21,8 @@ const programRoutes = require('./src/routes/program.routes');
 const batchRoutes = require('./src/routes/batch.routes');
 const semesterRoutes = require('./src/routes/semester.routes');
 const surveyRoutes = require('./src/routes/survey.routes');
+const courseRoutes = require('./src/routes/course.routes');
+const unitRoutes = require('./src/routes/unit.routes');
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -71,6 +77,8 @@ app.use('/api/programs', programRoutes);
 app.use('/api/batches', batchRoutes);
 app.use('/api/semesters', semesterRoutes);
 app.use('/api/surveys', surveyRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api', unitRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

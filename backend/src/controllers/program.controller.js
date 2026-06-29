@@ -7,29 +7,45 @@ const prisma = require('../config/prisma');
 const getPrograms = async (req, res) => {
   try {
     const { search = '' } = req.query;
+    const role = req.user.role;
+    let whereClause = {};
 
-    // Find managed institute
-    const institute = await prisma.institute.findFirst({
-      where: { adminId: req.user.id },
-    });
+    if (role === 'SUPER_ADMIN') {
+      whereClause = {};
+    } else if (role === 'UNIVERSITY_ADMIN') {
+      const university = await prisma.university.findFirst({
+        where: { adminId: req.user.id },
+      });
+      if (university) {
+        whereClause = { institute: { universityId: university.id } };
+      } else {
+        return res.json({ success: true, data: [] });
+      }
+    } else {
+      // INSTITUTE_ADMIN or other
+      const institute = await prisma.institute.findFirst({
+        where: { adminId: req.user.id },
+      });
+      if (institute) {
+        whereClause = { instituteId: institute.id };
+      } else {
+        return res.json({ success: true, data: [] });
+      }
+    }
 
-    if (!institute) {
-      return res.json({ success: true, data: [] });
+    if (search) {
+      whereClause.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { code: { contains: search, mode: 'insensitive' } },
+      ];
     }
 
     const programs = await prisma.program.findMany({
-      where: {
-        instituteId: institute.id,
-        ...(search && {
-          OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            { code: { contains: search, mode: 'insensitive' } },
-          ],
-        }),
-      },
+      where: whereClause,
       orderBy: { createdAt: 'desc' },
       include: {
         _count: { select: { batches: true } },
+        institute: { select: { name: true } },
       },
     });
 
@@ -52,12 +68,22 @@ const createProgram = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Name and code are required' });
     }
 
-    const institute = await prisma.institute.findFirst({
-      where: { adminId: req.user.id },
-    });
+    let instituteId = req.body.instituteId;
 
-    if (!institute) {
-      return res.status(403).json({ success: false, message: 'You are not assigned to any institute' });
+    if (req.user.role === 'SUPER_ADMIN' && !instituteId) {
+      const firstInst = await prisma.institute.findFirst();
+      if (firstInst) instituteId = firstInst.id;
+    } else if (!instituteId) {
+      const institute = await prisma.institute.findFirst({
+        where: req.user.role === 'UNIVERSITY_ADMIN' 
+          ? { university: { adminId: req.user.id } } 
+          : { adminId: req.user.id },
+      });
+      if (institute) instituteId = institute.id;
+    }
+
+    if (!instituteId) {
+      return res.status(403).json({ success: false, message: 'You are not assigned to any institute or no institute exists' });
     }
 
     // Check duplicate code
@@ -74,7 +100,7 @@ const createProgram = async (req, res) => {
         name,
         code: code.toUpperCase(),
         description,
-        instituteId: institute.id,
+        instituteId: instituteId,
       },
     });
 
@@ -93,21 +119,29 @@ const updateProgram = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, description, isActive } = req.body;
+    const role = req.user.role;
 
-    const institute = await prisma.institute.findFirst({
-      where: { adminId: req.user.id },
-    });
-
-    if (!institute) {
-      return res.status(403).json({ success: false, message: 'Access denied' });
-    }
-
-    const program = await prisma.program.findFirst({
-      where: { id, instituteId: institute.id },
+    const program = await prisma.program.findUnique({
+      where: { id },
+      include: { institute: true }
     });
 
     if (!program) {
       return res.status(404).json({ success: false, message: 'Program not found' });
+    }
+
+    // Access control
+    if (role !== 'SUPER_ADMIN') {
+      if (role === 'UNIVERSITY_ADMIN') {
+        const uni = await prisma.university.findFirst({ where: { adminId: req.user.id } });
+        if (!uni || program.institute.universityId !== uni.id) {
+          return res.status(403).json({ success: false, message: 'Access denied' });
+        }
+      } else {
+        if (program.institute.adminId !== req.user.id) {
+          return res.status(403).json({ success: false, message: 'Access denied' });
+        }
+      }
     }
 
     const updated = await prisma.program.update({
@@ -133,21 +167,29 @@ const updateProgram = async (req, res) => {
 const deleteProgram = async (req, res) => {
   try {
     const { id } = req.params;
+    const role = req.user.role;
 
-    const institute = await prisma.institute.findFirst({
-      where: { adminId: req.user.id },
-    });
-
-    if (!institute) {
-      return res.status(403).json({ success: false, message: 'Access denied' });
-    }
-
-    const program = await prisma.program.findFirst({
-      where: { id, instituteId: institute.id },
+    const program = await prisma.program.findUnique({
+      where: { id },
+      include: { institute: true }
     });
 
     if (!program) {
       return res.status(404).json({ success: false, message: 'Program not found' });
+    }
+
+    // Access control
+    if (role !== 'SUPER_ADMIN') {
+      if (role === 'UNIVERSITY_ADMIN') {
+        const uni = await prisma.university.findFirst({ where: { adminId: req.user.id } });
+        if (!uni || program.institute.universityId !== uni.id) {
+          return res.status(403).json({ success: false, message: 'Access denied' });
+        }
+      } else {
+        if (program.institute.adminId !== req.user.id) {
+          return res.status(403).json({ success: false, message: 'Access denied' });
+        }
+      }
     }
 
     await prisma.program.delete({

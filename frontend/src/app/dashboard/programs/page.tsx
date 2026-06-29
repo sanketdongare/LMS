@@ -6,7 +6,7 @@ import {
   Divider, Tab, Tabs, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Avatar, Dialog, DialogTitle, DialogContent,
   DialogActions, Select, MenuItem, InputLabel, FormControl, LinearProgress,
-  Paper, Tooltip, Alert
+  Paper, Tooltip, Alert, Skeleton
 } from '@mui/material';
 import {
   Add, Delete, Edit, ChevronRight, School, People, Class,
@@ -46,6 +46,7 @@ import { formatDistanceToNow } from 'date-fns';
 
 export default function ProgramsAndBatchesPage() {
   const { user } = useAppSelector((s) => s.auth);
+  const canManage = ['SUPER_ADMIN', 'UNIVERSITY_ADMIN', 'INSTITUTE_ADMIN'].includes(user?.role || '');
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0);
@@ -143,7 +144,6 @@ export default function ProgramsAndBatchesPage() {
 
   return (
     <Box className="page-content" sx={{ color: 'text.primary' }}>
-      {/* Back Header if Batch is selected */}
       {selectedBatchId && activeBatch ? (
         <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
           <IconButton
@@ -166,15 +166,78 @@ export default function ProgramsAndBatchesPage() {
           </Box>
         </Box>
       ) : (
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" fontWeight={700}>
-            <span className="gradient-text">Programs & Batches</span>
-          </Typography>
-          <Typography variant="body2" color="text.secondary" mt={0.5}>
-            Create academic programs and batches, assign semesters, enroll learners, and deploy surveys.
-          </Typography>
-        </Box>
+        <>
+          {/* ── Dashboard Header ── */}
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h4" fontWeight={700}>
+              <span className="gradient-text">Programs &amp; Batches</span>
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mt={0.5}>
+              Create academic programs and batches, assign semesters, enroll learners, and deploy surveys.
+            </Typography>
+          </Box>
+
+          {/* ── Stat Cards ── */}
+          <Grid container spacing={2.5} sx={{ mb: 4 }}>
+            <Grid item xs={12} sm={6} md={4}>
+              <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
+                <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: '16px !important' }}>
+                  <Box sx={{ p: 1.2, borderRadius: 2, background: 'rgba(255,255,255,0.15)', display: 'flex' }}>
+                    <School sx={{ color: 'white', fontSize: 22 }} />
+                  </Box>
+                  <Box>
+                    {progLoading ? (
+                      <Skeleton variant="text" width={50} height={32} sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} />
+                    ) : (
+                      <Typography variant="h5" fontWeight={800} color="white">{programs.length}</Typography>
+                    )}
+                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500 }}>Total Programs</Typography>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
+                <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: '16px !important' }}>
+                  <Box sx={{ p: 1.2, borderRadius: 2, background: 'rgba(255,255,255,0.15)', display: 'flex' }}>
+                    <Class sx={{ color: 'white', fontSize: 22 }} />
+                  </Box>
+                  <Box>
+                    {progLoading ? (
+                      <Skeleton variant="text" width={50} height={32} sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} />
+                    ) : (
+                      <Typography variant="h5" fontWeight={800} color="white">
+                        {programs.reduce((sum: number, p: any) => sum + (p._count?.batches ?? 0), 0)}
+                      </Typography>
+                    )}
+                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500 }}>Total Batches</Typography>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
+                <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: '16px !important' }}>
+                  <Box sx={{ p: 1.2, borderRadius: 2, background: 'rgba(255,255,255,0.15)', display: 'flex' }}>
+                    <CheckCircle sx={{ color: 'white', fontSize: 22 }} />
+                  </Box>
+                  <Box>
+                    {progLoading ? (
+                      <Skeleton variant="text" width={50} height={32} sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} />
+                    ) : (
+                      <Typography variant="h5" fontWeight={800} color="white">
+                        {programs.filter((p: any) => p.isActive).length}
+                      </Typography>
+                    )}
+                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500 }}>Active Programs</Typography>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </>
       )}
+
 
       {/* Main Container */}
       {!selectedBatchId ? (
@@ -213,7 +276,7 @@ export default function ProgramsAndBatchesPage() {
                         key={prog.id}
                         disablePadding
                         secondaryAction={
-                          user?.role === 'INSTITUTE_ADMIN' ? (
+                          canManage ? (
                             <IconButton edge="end" size="small" onClick={(e) => handleDeleteProgram(prog.id, e)}>
                               <Delete sx={{ fontSize: 18, color: 'error.main' }} />
                             </IconButton>
@@ -268,7 +331,7 @@ export default function ProgramsAndBatchesPage() {
                         Select a batch below to manage its courses, surveys, learners, and track analytics.
                       </Typography>
                     </Box>
-                    {user?.role === 'INSTITUTE_ADMIN' && (
+                    {canManage && (
                       <Button
                         variant="contained"
                         startIcon={<Add />}
@@ -322,7 +385,7 @@ export default function ProgramsAndBatchesPage() {
                                 <Typography variant="caption" color="text.secondary">
                                   Learners: <strong>{batch._count?.enrollments || 0}</strong> · Semesters: <strong>{batch._count?.semesters || 0}</strong>
                                 </Typography>
-                                {user?.role === 'INSTITUTE_ADMIN' && (
+                                {canManage && (
                                   <IconButton
                                     size="small"
                                     onClick={(e) => handleDeleteBatch(batch.id, e)}
@@ -438,6 +501,7 @@ export default function ProgramsAndBatchesPage() {
 // ==========================================
 function SemestersTab({ batchId }: { batchId: string }) {
   const { user } = useAppSelector((s) => s.auth);
+  const canManage = ['SUPER_ADMIN', 'UNIVERSITY_ADMIN', 'INSTITUTE_ADMIN'].includes(user?.role || '');
   const [selectedSemesterId, setSelectedSemesterId] = useState<string | null>(null);
   const [semModalOpen, setSemModalOpen] = useState(false);
   const [courseModalOpen, setCourseModalOpen] = useState(false);
@@ -512,7 +576,7 @@ function SemestersTab({ batchId }: { batchId: string }) {
           <CardContent sx={{ p: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6" fontWeight={700}>Semesters</Typography>
-              {user?.role === 'INSTITUTE_ADMIN' && (
+              {canManage && (
                 <Button variant="outlined" size="small" startIcon={<Add />} onClick={() => setSemModalOpen(true)}>
                   Add Sem
                 </Button>
@@ -533,7 +597,7 @@ function SemestersTab({ batchId }: { batchId: string }) {
                     key={sem.id}
                     disablePadding
                     secondaryAction={
-                      user?.role === 'INSTITUTE_ADMIN' ? (
+                      canManage ? (
                         <IconButton edge="end" size="small" onClick={(e) => handleDeleteSem(sem.id, e)}>
                           <Delete sx={{ fontSize: 18, color: 'error.main' }} />
                         </IconButton>
@@ -577,7 +641,7 @@ function SemestersTab({ batchId }: { batchId: string }) {
                     View and create courses for this academic semester.
                   </Typography>
                 </Box>
-                {user?.role === 'INSTITUTE_ADMIN' && (
+                {canManage && (
                   <Button variant="contained" startIcon={<Add />} onClick={() => setCourseModalOpen(true)}>
                     Create Course
                   </Button>
@@ -600,7 +664,7 @@ function SemestersTab({ batchId }: { batchId: string }) {
                         <CardContent sx={{ p: 2 }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                             <Typography variant="subtitle2" fontWeight={700}>{course.title}</Typography>
-                            {user?.role === 'INSTITUTE_ADMIN' && (
+                            {canManage && (
                               <IconButton size="small" onClick={() => handleUnassignCourse(course.id)} sx={{ color: 'error.main' }}>
                                 <Delete sx={{ fontSize: 18 }} />
                               </IconButton>
@@ -676,6 +740,7 @@ function SemestersTab({ batchId }: { batchId: string }) {
 // ==========================================
 function SurveysTab({ batchId }: { batchId: string }) {
   const { user } = useAppSelector((s) => s.auth);
+  const canManage = ['SUPER_ADMIN', 'UNIVERSITY_ADMIN', 'INSTITUTE_ADMIN'].includes(user?.role || '');
   const [selectedSurveyId, setSelectedSurveyId] = useState<string | null>(null);
   const [surveyModalOpen, setSurveyModalOpen] = useState(false);
   const [questionModalOpen, setQuestionModalOpen] = useState(false);
@@ -748,7 +813,7 @@ function SurveysTab({ batchId }: { batchId: string }) {
           <CardContent sx={{ p: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6" fontWeight={700}>Surveys</Typography>
-              {user?.role === 'INSTITUTE_ADMIN' && (
+              {canManage && (
                 <Button variant="outlined" size="small" startIcon={<Add />} onClick={() => setSurveyModalOpen(true)}>
                   Create
                 </Button>
@@ -769,7 +834,7 @@ function SurveysTab({ batchId }: { batchId: string }) {
                     key={surv.id}
                     disablePadding
                     secondaryAction={
-                      user?.role === 'INSTITUTE_ADMIN' ? (
+                      canManage ? (
                         <IconButton edge="end" size="small" onClick={(e) => handleDeleteSurvey(surv.id, e)}>
                           <Delete sx={{ fontSize: 18, color: 'error.main' }} />
                         </IconButton>
@@ -812,7 +877,7 @@ function SurveysTab({ batchId }: { batchId: string }) {
               <CardContent sx={{ p: 3 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                   <Typography variant="h6" fontWeight={700}>{surveyDetail.title}</Typography>
-                  {user?.role === 'INSTITUTE_ADMIN' && (
+                  {canManage && (
                     <Button variant="contained" size="small" startIcon={<Add />} onClick={() => setQuestionModalOpen(true)}>
                       Add Question
                     </Button>
@@ -838,7 +903,7 @@ function SurveysTab({ batchId }: { batchId: string }) {
                             Q{idx + 1}. {q.text}{' '}
                             {q.isRequired && <span style={{ color: 'red' }}>*</span>}
                           </Typography>
-                          {user?.role === 'INSTITUTE_ADMIN' && (
+                          {canManage && (
                             <IconButton size="small" onClick={() => handleDeleteQuestion(q.id)} sx={{ color: 'error.main', p: 0.2 }}>
                               <Delete sx={{ fontSize: 16 }} />
                             </IconButton>
@@ -960,6 +1025,7 @@ function SurveysTab({ batchId }: { batchId: string }) {
 // ==========================================
 function LearnersTab({ batchId }: { batchId: string }) {
   const { user } = useAppSelector((s) => s.auth);
+  const canManage = ['SUPER_ADMIN', 'UNIVERSITY_ADMIN', 'INSTITUTE_ADMIN'].includes(user?.role || '');
   const [enrollModalOpen, setEnrollModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -1001,7 +1067,7 @@ function LearnersTab({ batchId }: { batchId: string }) {
               List of enrolled learners in this batch. You can register new learners to assign them coursework and surveys.
             </Typography>
           </Box>
-          {user?.role === 'INSTITUTE_ADMIN' && (
+          {canManage && (
             <Button variant="contained" startIcon={<Add />} onClick={() => setEnrollModalOpen(true)}>
               Enroll Learner
             </Button>
@@ -1024,7 +1090,7 @@ function LearnersTab({ batchId }: { batchId: string }) {
                   <TableCell>Student</TableCell>
                   <TableCell>Email</TableCell>
                   <TableCell>Enrolled Date</TableCell>
-                  {user?.role === 'INSTITUTE_ADMIN' && <TableCell align="right">Actions</TableCell>}
+                  {canManage && <TableCell align="right">Actions</TableCell>}
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -1038,7 +1104,7 @@ function LearnersTab({ batchId }: { batchId: string }) {
                     </TableCell>
                     <TableCell>{enr.user?.email}</TableCell>
                     <TableCell>{new Date(enr.enrolledAt).toLocaleDateString()}</TableCell>
-                    {user?.role === 'INSTITUTE_ADMIN' && (
+                    {canManage && (
                       <TableCell align="right">
                         <IconButton size="small" onClick={() => handleUnenroll(enr.user.id)} sx={{ color: 'error.main' }}>
                           <Delete sx={{ fontSize: 18 }} />

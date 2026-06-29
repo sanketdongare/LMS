@@ -68,12 +68,17 @@ const authenticate = async (req, res, next) => {
 };
 
 /**
- * Role-based authorization middleware
+ * Role-based authorization middleware.
+ * SUPER_ADMIN bypasses all role checks and has full access to every endpoint.
  */
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+    // SUPER_ADMIN has unrestricted access to all routes
+    if (req.user.role === 'SUPER_ADMIN') {
+      return next();
     }
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({ 

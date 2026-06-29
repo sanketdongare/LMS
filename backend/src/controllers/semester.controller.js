@@ -122,14 +122,32 @@ const assignCourseToSemester = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Course title or courseId is required' });
     }
 
-    // Find the university of the logged-in admin's institute
-    const institute = await prisma.institute.findFirst({
-      where: { adminId: req.user.id },
-      select: { universityId: true },
+    // Find the universityId through the semester's hierarchy
+    const semester = await prisma.semester.findUnique({
+      where: { id },
+      include: {
+        batch: {
+          include: {
+            program: {
+              include: {
+                institute: {
+                  select: { universityId: true }
+                }
+              }
+            }
+          }
+        }
+      }
     });
 
-    if (!institute) {
-      return res.status(403).json({ success: false, message: 'Only an Institute Admin can create courses here' });
+    if (!semester) {
+      return res.status(404).json({ success: false, message: 'Semester not found' });
+    }
+
+    const universityId = semester.batch?.program?.institute?.universityId;
+
+    if (!universityId) {
+      return res.status(500).json({ success: false, message: 'Failed to determine university context for this semester' });
     }
 
     const course = await prisma.course.create({
@@ -137,7 +155,7 @@ const assignCourseToSemester = async (req, res) => {
         title,
         description,
         duration: duration ? parseInt(duration) : null,
-        universityId: institute.universityId,
+        universityId,
         semesterId: id,
         isPublished: true,
       },

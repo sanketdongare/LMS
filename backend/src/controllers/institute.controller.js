@@ -130,8 +130,13 @@ const createInstitute = async (req, res) => {
       resolvedUniversityId = managedUniversity.id;
     }
 
+    if (!resolvedUniversityId && req.user.role === 'SUPER_ADMIN') {
+      const firstUni = await prisma.university.findFirst();
+      if (firstUni) resolvedUniversityId = firstUni.id;
+    }
+
     if (!resolvedUniversityId) {
-      return res.status(400).json({ success: false, message: 'universityId is required' });
+      return res.status(400).json({ success: false, message: 'universityId is required or no university exists' });
     }
 
     // Check the university exists

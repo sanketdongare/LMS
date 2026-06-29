@@ -4,11 +4,11 @@ import {
   Box, Button, Typography, TextField, InputAdornment, Chip, Avatar,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   TablePagination, IconButton, Tooltip, Skeleton, Menu, MenuItem,
-  Dialog, DialogTitle, DialogContent, DialogActions, Alert,
+  Dialog, DialogTitle, DialogContent, DialogActions, Alert, Grid, Card, CardContent,
 } from '@mui/material';
 import {
   Add, Search, Edit, Delete, MoreVert, AccountBalance, Refresh, Block,
-  CheckCircle, Cancel,
+  CheckCircle, Cancel, PowerSettingsNew, School,
 } from '@mui/icons-material';
 import {
   useGetInstitutesQuery,
@@ -20,6 +20,29 @@ import { useAppSelector } from '@/store/store';
 import InstituteFormModal from '@/components/institutes/InstituteFormModal';
 import { formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
+
+// Mini stat card for dashboard overview
+function StatCard({ label, value, icon, gradient, loading }: {
+  label: string; value: string | number; icon: React.ReactNode; gradient: string; loading?: boolean;
+}) {
+  return (
+    <Card sx={{ borderRadius: 3, background: gradient, border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
+      <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: '16px !important' }}>
+        <Box sx={{ p: 1.2, borderRadius: 2, background: 'rgba(255,255,255,0.15)', display: 'flex' }}>
+          {icon}
+        </Box>
+        <Box>
+          {loading ? (
+            <Skeleton variant="text" width={50} height={32} sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} />
+          ) : (
+            <Typography variant="h5" fontWeight={800} color="white">{value}</Typography>
+          )}
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500 }}>{label}</Typography>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function InstitutesPage() {
   const { user } = useAppSelector((s) => s.auth);
@@ -87,20 +110,66 @@ export default function InstitutesPage() {
     setActiveRow(inst);
   };
 
+  const activeCount = institutes.filter((i) => i.isActive).length;
+  const uniqueUniversities = new Set(institutes.map((i) => i.universityId)).size;
+
   return (
     <Box className="page-content">
-      {/* Page Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4, flexWrap: 'wrap', gap: 2 }}>
-        <Box>
-          <Typography variant="h4" fontWeight={700}>
-            <span className="gradient-text">Institutes</span>
-          </Typography>
-          <Typography variant="body2" color="text.secondary" mt={0.5}>
-            {user?.role === 'UNIVERSITY_ADMIN'
-              ? 'Manage institutes within your university'
-              : 'Manage all institutes across universities'}
-          </Typography>
-        </Box>
+      {/* ── Dashboard Header ── */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" fontWeight={700}>
+          <span className="gradient-text">Institutes</span>
+        </Typography>
+        <Typography variant="body2" color="text.secondary" mt={0.5}>
+          {user?.role === 'UNIVERSITY_ADMIN'
+            ? 'Manage institutes within your university'
+            : 'Manage all institutes across universities'}
+        </Typography>
+      </Box>
+
+      {/* ── Stat Cards ── */}
+      <Grid container spacing={2.5} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            label="Total Institutes"
+            value={total}
+            icon={<AccountBalance sx={{ color: 'white', fontSize: 22 }} />}
+            gradient="linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)"
+            loading={isLoading}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            label="Active"
+            value={institutes.filter(i => i.isActive).length}
+            icon={<CheckCircle sx={{ color: 'white', fontSize: 22 }} />}
+            gradient="linear-gradient(135deg, #10b981 0%, #059669 100%)"
+            loading={isLoading}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            label="Inactive"
+            value={institutes.filter(i => !i.isActive).length}
+            icon={<PowerSettingsNew sx={{ color: 'white', fontSize: 22 }} />}
+            gradient="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
+            loading={isLoading}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            label="Universities"
+            value={uniqueUniversities}
+            icon={<School sx={{ color: 'white', fontSize: 22 }} />}
+            gradient="linear-gradient(135deg, #0891b2 0%, #0e7490 100%)"
+            loading={isLoading}
+          />
+        </Grid>
+      </Grid>
+
+      {/* ── Page Actions ── */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Typography variant="h6" fontWeight={600}>All Institutes</Typography>
         <Box sx={{ display: 'flex', gap: 1.5 }}>
           <Tooltip title="Refresh">
             <span>

@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import {
   Dashboard, School, People, MenuBook, Notifications, Settings,
-  ExpandLess, ExpandMore, AdminPanelSettings, Analytics, Logout, AccountBalance, Class,
+  ExpandLess, ExpandMore, AdminPanelSettings, Analytics, Logout, AccountBalance, Class, Security,
 } from '@mui/icons-material';
 import { useAppSelector, useAppDispatch } from '@/store/store';
 import { logout } from '@/store/slices/authSlice';
@@ -53,6 +53,12 @@ const navItems = [
     label: 'Users',
     icon: <People />,
     href: '/dashboard/users',
+    roles: ['SUPER_ADMIN'],
+  },
+  {
+    label: 'Roles & Permissions',
+    icon: <Security />,
+    href: '/dashboard/roles',
     roles: ['SUPER_ADMIN'],
   },
   {
