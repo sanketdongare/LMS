@@ -115,12 +115,6 @@ const createUniversity = async (req, res) => {
       },
     });
 
-    // Emit real-time event
-    const io = req.app.get('io');
-    if (io) {
-      io.emit('university:created', university);
-    }
-
     // Create notification for all admins
     const admins = await prisma.user.findMany({ 
       where: { role: { in: ['SUPER_ADMIN'] } },
@@ -178,12 +172,6 @@ const updateUniversity = async (req, res) => {
       },
     });
 
-    // Emit real-time event
-    const io = req.app.get('io');
-    if (io) {
-      io.emit('university:updated', university);
-    }
-
     res.json({ success: true, data: university, message: 'University updated successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to update university' });
@@ -224,11 +212,6 @@ const deleteUniversity = async (req, res) => {
         })
       ]);
 
-      const io = req.app.get('io');
-      if (io) {
-        io.emit('university:deleted', { id: req.params.id });
-      }
-
       return res.json({ success: true, message: 'University permanently deleted successfully' });
     }
 
@@ -236,12 +219,6 @@ const deleteUniversity = async (req, res) => {
       where: { id: req.params.id },
       data: { isActive: false },
     });
-
-    // Emit real-time event
-    const io = req.app.get('io');
-    if (io) {
-      io.emit('university:deleted', { id: req.params.id });
-    }
 
     res.json({ success: true, message: 'University deactivated successfully' });
   } catch (error) {

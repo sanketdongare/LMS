@@ -48,3 +48,13 @@ yarn-error.log*
 .DS_Store
 *.pem
 Thumbs.db
+
+# Private credentials / Secrets
+*private-key*
+*firebase-key*
+*.txt
+*.key
+*.json-credentials
+!backend/vercel.json
+!package.json
+

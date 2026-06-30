@@ -10,7 +10,8 @@ const getCourses = async (req, res) => {
     let whereClause = {};
 
     if (role === 'STUDENT') {
-      whereClause = { enrollments: { some: { userId: req.user.id } } };
+      // Students see ALL published courses with their enrollment status
+      whereClause = { isPublished: true };
     } else if (role === 'INSTRUCTOR') {
       whereClause = { instructorId: req.user.id };
     } else if (role === 'INSTITUTE_ADMIN') {
@@ -26,16 +27,61 @@ const getCourses = async (req, res) => {
       include: {
         instructor: { select: { name: true, avatar: true } },
         semester: { select: { name: true, batch: { select: { name: true } } } },
-        _count: { select: { enrollments: true, assignments: true } }
+        _count: { select: { enrollments: true, assignments: true } },
+        ...(role === 'STUDENT' && {
+          enrollments: {
+            where: { userId: req.user.id },
+            select: { id: true, status: true, progress: true }
+          }
+        })
       },
       orderBy: { createdAt: 'desc' }
     });
-    res.json({ success: true, data: courses });
+
+    // For students, flag each course with enrollment status
+    const data = role === 'STUDENT'
+      ? courses.map(c => ({
+          ...c,
+          isEnrolled: c.enrollments && c.enrollments.length > 0,
+          myEnrollment: c.enrollments?.[0] || null,
+        }))
+      : courses;
+
+    res.json({ success: true, data });
   } catch (error) {
     console.error('getCourses error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch courses' });
   }
 };
+
+/**
+ * POST /api/courses/:id/enroll
+ * Student self-enrolls in a course
+ */
+const enrollSelf = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Check course exists and is published
+    const course = await prisma.course.findUnique({ where: { id } });
+    if (!course) return res.status(404).json({ success: false, message: 'Course not found' });
+    if (!course.isPublished) return res.status(403).json({ success: false, message: 'Course is not published' });
+
+    // Upsert enrollment
+    const enrollment = await prisma.enrollment.upsert({
+      where: { userId_courseId: { userId, courseId: id } },
+      update: { status: 'ACTIVE' },
+      create: { userId, courseId: id, status: 'ACTIVE' },
+    });
+
+    res.json({ success: true, data: enrollment, message: 'Enrolled successfully' });
+  } catch (error) {
+    console.error('enrollSelf error:', error);
+    res.status(500).json({ success: false, message: 'Failed to enroll' });
+  }
+};
+
 
 /**
  * GET /api/courses/:id
@@ -300,7 +346,7 @@ const getCourseAnalytics = async (req, res) => {
 };
 
 module.exports = {
-  getCourses, getCourseById,
+  getCourses, getCourseById, enrollSelf,
   getOutcomes, createOutcome, deleteOutcome,
   getAnnouncements, createAnnouncement, deleteAnnouncement,
   getAssignments, createAssignment, submitAssignment, gradeSubmission,

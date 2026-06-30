@@ -170,10 +170,6 @@ const createInstitute = async (req, res) => {
       },
     });
 
-    // Emit real-time event
-    const io = req.app.get('io');
-    if (io) io.emit('institute:created', institute);
-
     res.status(201).json({ success: true, data: institute, message: 'Institute created successfully' });
   } catch (error) {
     console.error('Create institute error:', error);
@@ -224,9 +220,6 @@ const updateInstitute = async (req, res) => {
       },
     });
 
-    const io = req.app.get('io');
-    if (io) io.emit('institute:updated', institute);
-
     res.json({ success: true, data: institute, message: 'Institute updated successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to update institute' });
@@ -259,8 +252,6 @@ const deleteInstitute = async (req, res) => {
 
     if (permanent === 'true') {
       await prisma.institute.delete({ where: { id: req.params.id } });
-      const io = req.app.get('io');
-      if (io) io.emit('institute:deleted', { id: req.params.id });
       return res.json({ success: true, message: 'Institute permanently deleted' });
     }
 
@@ -268,9 +259,6 @@ const deleteInstitute = async (req, res) => {
       where: { id: req.params.id },
       data: { isActive: false },
     });
-
-    const io = req.app.get('io');
-    if (io) io.emit('institute:deactivated', { id: req.params.id });
 
     res.json({ success: true, message: 'Institute deactivated successfully' });
   } catch (error) {

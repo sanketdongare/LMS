@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {
-  getCourses, getCourseById,
+  getCourses, getCourseById, enrollSelf,
   getOutcomes, createOutcome, deleteOutcome,
   getAnnouncements, createAnnouncement, deleteAnnouncement,
   getAssignments, createAssignment, submitAssignment, gradeSubmission,
@@ -16,6 +16,7 @@ router.use(authenticate);
 // List/Detail
 router.get('/', getCourses);
 router.get('/:id', getCourseById);
+router.post('/:id/enroll', authorize('STUDENT'), enrollSelf);
 
 // Outcomes
 router.get('/:id/outcomes', getOutcomes);

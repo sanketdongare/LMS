@@ -14,6 +14,8 @@ export interface CourseListItem {
   instructor?: { name: string; avatar?: string };
   semester?: { name: string; batch: { name: string } };
   _count?: { enrollments: number; assignments: number };
+  isEnrolled?: boolean;
+  myEnrollment?: { id: string; status: string; progress: number } | null;
 }
 
 export interface CourseDetail {
@@ -201,6 +203,10 @@ export const courseApi = createApi({
       query: (id) => `/courses/${id}`,
       providesTags: ['CourseDetail'],
     }),
+    enrollInCourse: builder.mutation<{ success: boolean; data: any; message: string }, string>({
+      query: (id) => ({ url: `/courses/${id}/enroll`, method: 'POST' }),
+      invalidatesTags: ['Courses'],
+    }),
 
     // --- Outcomes ---
     getOutcomes: builder.query<{ success: boolean; data: CourseOutcome[] }, string>({
@@ -376,6 +382,8 @@ export const {
   useUpdateAgentMutation,
   useChatWithAgentMutation,
   useGetCourseAnalyticsQuery,
+  // Enrollment
+  useEnrollInCourseMutation,
   // Units
   useGetCourseUnitsQuery,
   useGetUnitQuery,
