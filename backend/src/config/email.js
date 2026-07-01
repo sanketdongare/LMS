@@ -1,4 +1,8 @@
 const nodemailer = require('nodemailer');
+const dns = require('dns');
+
+// Force Node to prefer IPv4 to avoid ENETUNREACH IPv6 issues on Railway/cloud platforms
+dns.setDefaultResultOrder('ipv4first');
 
 /**
  * Sends a welcome email to the newly created administrator containing their credentials and instructions.
@@ -25,10 +29,15 @@ const sendWelcomeEmail = async ({ email, name, role, tempPassword, adminId }) =>
   }
 
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // false for port 587 (STARTTLS)
     auth: {
       user: emailUser,
       pass: emailPass,
+    },
+    tls: {
+      rejectUnauthorized: false,
     },
   });
 
