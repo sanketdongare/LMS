@@ -242,4 +242,74 @@ router.delete('/:id', authorize('SUPER_ADMIN', 'UNIVERSITY_ADMIN', 'INSTITUTE_AD
   }
 });
 
+// ── GET /api/users/roles/permissions ──────────────────────────────────────────
+// Fetch all role-permissions from database (self-healing default seed)
+const INITIAL_PERMISSIONS = {
+  SUPER_ADMIN: ['all_access', 'uni_access', 'inst_access', 'prog_access', 'course_edit', 'course_view'],
+  UNIVERSITY_ADMIN: ['uni_access', 'inst_access', 'prog_access', 'course_edit', 'course_view'],
+  INSTITUTE_ADMIN: ['inst_access', 'prog_access', 'course_edit', 'course_view'],
+  TECH_COORD: ['prog_access', 'course_edit', 'course_view'],
+  COURSE_COORD: ['course_edit', 'course_view'],
+  LEARNER: ['course_view'],
+};
+
+router.get('/roles/permissions', authorize('SUPER_ADMIN'), async (req, res) => {
+  try {
+    let list = await prisma.rolePermission.findMany();
+    
+    // Seed default permissions if table is empty
+    if (list.length === 0) {
+      const seedData = [];
+      Object.entries(INITIAL_PERMISSIONS).forEach(([role, permissions]) => {
+        permissions.forEach((permission) => {
+          seedData.push({ role, permission });
+        });
+      });
+      await prisma.rolePermission.createMany({ data: seedData });
+      list = await prisma.rolePermission.findMany();
+    }
+
+    // Group permissions by role
+    const mapping = {};
+    list.forEach((item) => {
+      if (!mapping[item.role]) mapping[item.role] = [];
+      mapping[item.role].push(item.permission);
+    });
+    res.json({ success: true, data: mapping });
+  } catch (error) {
+    console.error('Fetch permissions error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch permissions' });
+  }
+});
+
+// ── POST /api/users/roles/permissions/toggle ──────────────────────────────────
+// Toggle a permission for a role in database
+router.post('/roles/permissions/toggle', authorize('SUPER_ADMIN'), async (req, res) => {
+  try {
+    const { role, permission } = req.body;
+    if (!role || !permission) {
+      return res.status(400).json({ success: false, message: 'role and permission are required' });
+    }
+
+    const existing = await prisma.rolePermission.findFirst({
+      where: { role, permission }
+    });
+
+    if (existing) {
+      await prisma.rolePermission.delete({
+        where: { id: existing.id }
+      });
+      res.json({ success: true, enabled: false, message: `Permission ${permission} removed for ${role}` });
+    } else {
+      await prisma.rolePermission.create({
+        data: { role, permission }
+      });
+      res.json({ success: true, enabled: true, message: `Permission ${permission} granted for ${role}` });
+    }
+  } catch (error) {
+    console.error('Toggle permission error:', error);
+    res.status(500).json({ success: false, message: 'Failed to toggle permission' });
+  }
+});
+
 module.exports = router;

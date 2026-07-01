@@ -71,22 +71,66 @@ const authenticate = async (req, res, next) => {
  * Role-based authorization middleware.
  * SUPER_ADMIN bypasses all role checks and has full access to every endpoint.
  */
+const roleToPermissionMap = {
+  SUPER_ADMIN: 'all_access',
+  UNIVERSITY_ADMIN: 'uni_access',
+  INSTITUTE_ADMIN: 'inst_access',
+  INSTRUCTOR: 'course_edit',
+  STUDENT: 'course_view',
+  TECH_COORD: 'prog_access',
+  COURSE_COORD: 'course_edit',
+  LEARNER: 'course_view',
+};
+
 const authorize = (...roles) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
-    }
-    // SUPER_ADMIN has unrestricted access to all routes
-    if (req.user.role === 'SUPER_ADMIN') {
-      return next();
-    }
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ 
-        success: false, 
-        message: `Access denied. Required roles: ${roles.join(', ')}` 
+  return async (req, res, next) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, message: 'Not authenticated' });
+      }
+      
+      // SUPER_ADMIN has unrestricted access to all routes
+      if (req.user.role === 'SUPER_ADMIN') {
+        return next();
+      }
+
+      // Fetch user's role permissions from the database
+      const dbPermissions = await prisma.rolePermission.findMany({
+        where: { role: req.user.role },
+        select: { permission: true }
       });
+      
+      const userPermissions = dbPermissions.map(p => p.permission);
+
+      // If role has 'all_access', allow access
+      if (userPermissions.includes('all_access')) {
+        return next();
+      }
+
+      // Check if any of the authorized roles maps to a permission the user holds
+      const isAuthorized = roles.some((role) => {
+        // Direct role matches (safe fallback)
+        if (req.user.role === role) return true;
+        
+        const mappedPermission = roleToPermissionMap[role];
+        if (mappedPermission && userPermissions.includes(mappedPermission)) {
+          return true;
+        }
+        return false;
+      });
+
+      if (!isAuthorized) {
+        return res.status(403).json({ 
+          success: false, 
+          message: `Access denied. Insufficient permissions for role: ${req.user.role}` 
+        });
+      }
+      
+      next();
+    } catch (err) {
+      console.error('Authorization middleware error:', err);
+      res.status(500).json({ success: false, message: 'Authorization verification failed' });
     }
-    next();
   };
 };
 

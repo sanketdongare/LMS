@@ -136,7 +136,7 @@ export const lmsApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Program', 'Batch', 'Semester', 'Course', 'Learner', 'Announcement', 'Survey', 'Analytics', 'User', 'AdminUser'],
+  tagTypes: ['Program', 'Batch', 'Semester', 'Course', 'Learner', 'Announcement', 'Survey', 'Analytics', 'User', 'AdminUser', 'RolePermissions'],
   endpoints: (builder) => ({
     // Programs
     getPrograms: builder.query<{ success: boolean; data: Program[] }, { search?: string; instituteId?: string } | void>({
@@ -302,6 +302,15 @@ export const lmsApi = createApi({
       query: (id) => ({ url: `/users/${id}`, method: 'DELETE' }),
       invalidatesTags: ['User', 'AdminUser'],
     }),
+    // Dynamic Role-Based Access Control
+    getRolePermissions: builder.query<{ success: boolean; data: Record<string, string[]> }, void>({
+      query: () => '/users/roles/permissions',
+      providesTags: ['RolePermissions'],
+    }),
+    toggleRolePermission: builder.mutation<{ success: boolean; enabled: boolean; message: string }, { role: string; permission: string }>({
+      query: (body) => ({ url: '/users/roles/permissions/toggle', method: 'POST', body }),
+      invalidatesTags: ['RolePermissions'],
+    }),
   }),
 });
 
@@ -339,4 +348,7 @@ export const {
   useCreateAdminUserMutation,
   useToggleUserActiveMutation,
   useDeleteUserMutation,
+  // RBAC
+  useGetRolePermissionsQuery,
+  useToggleRolePermissionMutation,
 } = lmsApi;

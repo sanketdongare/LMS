@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import { Info, Security, CheckCircle } from '@mui/icons-material';
 import toast from 'react-hot-toast';
+import { useGetRolePermissionsQuery, useToggleRolePermissionMutation } from '@/store/slices/lmsSlice';
 
 // The roles requested by the user
 const ROLES = [
@@ -40,32 +41,22 @@ const INITIAL_PERMISSIONS: Record<string, string[]> = {
 
 export default function RbacTable() {
   const theme = useTheme();
-  // State to hold the dynamic mapping of roleId -> array of permissionIds
-  const [rolePermissions, setRolePermissions] = useState<Record<string, string[]>>(INITIAL_PERMISSIONS);
 
-  const handleToggle = (roleId: string, permId: string) => {
-    // 1. Get the current state synchronously for the side-effect (toast)
-    const currentPerms = rolePermissions[roleId] || [];
-    const hasPerm = currentPerms.includes(permId);
+  // RTK Query Hooks for database access control configuration
+  const { data: permissionsRes, isLoading } = useGetRolePermissionsQuery();
+  const [togglePermission] = useToggleRolePermissionMutation();
 
-    // 2. Perform the pure state update
-    setRolePermissions(prev => {
-      const prevPerms = prev[roleId] || [];
-      const isCurrentlyEnabled = prevPerms.includes(permId);
-      
-      let newPerms;
-      if (isCurrentlyEnabled) {
-        newPerms = prevPerms.filter(p => p !== permId);
-      } else {
-        newPerms = [...prevPerms, permId];
-      }
-      return { ...prev, [roleId]: newPerms };
-    });
+  const rolePermissions = permissionsRes?.data || INITIAL_PERMISSIONS;
 
-    // 3. Trigger the side-effect outside the updater
-    toast.success(`Permission ${hasPerm ? 'removed' : 'granted'} for ${ROLES.find(r => r.id === roleId)?.name}`, {
-      icon: hasPerm ? '🔒' : '🔓',
-    });
+  const handleToggle = async (roleId: string, permId: string) => {
+    try {
+      const res = await togglePermission({ role: roleId, permission: permId }).unwrap();
+      toast.success(res.message, {
+        icon: res.enabled ? '🔓' : '🔒',
+      });
+    } catch (err: any) {
+      toast.error(err?.data?.message || 'Failed to update permission');
+    }
   };
 
   return (
