@@ -136,7 +136,7 @@ export const lmsApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Program', 'Batch', 'Semester', 'Course', 'Learner', 'Announcement', 'Survey', 'Analytics', 'User'],
+  tagTypes: ['Program', 'Batch', 'Semester', 'Course', 'Learner', 'Announcement', 'Survey', 'Analytics', 'User', 'AdminUser'],
   endpoints: (builder) => ({
     // Programs
     getPrograms: builder.query<{ success: boolean; data: Program[] }, { search?: string } | void>({
@@ -277,7 +277,7 @@ export const lmsApi = createApi({
       query: ({ page = 1, limit = 10, search = '', role } = {}) => ({
         url: `/users?page=${page}&limit=${limit}&search=${search}${role ? `&role=${role}` : ''}`,
       }),
-      providesTags: ['User'],
+      providesTags: ['User', 'AdminUser'],
     }),
     updateUserRole: builder.mutation<{ success: boolean; data: any; message: string }, { id: string; role: string }>({
       query: ({ id, role }) => ({
@@ -285,7 +285,22 @@ export const lmsApi = createApi({
         method: 'PUT',
         body: { role },
       }),
-      invalidatesTags: ['User'],
+      invalidatesTags: ['User', 'AdminUser'],
+    }),
+    createAdminUser: builder.mutation<
+      { success: boolean; data: any; message: string },
+      { email: string; name: string; password: string; role: string }
+    >({
+      query: (body) => ({ url: '/users/create-admin', method: 'POST', body }),
+      invalidatesTags: ['User', 'AdminUser'],
+    }),
+    toggleUserActive: builder.mutation<{ success: boolean; data: any; message: string }, string>({
+      query: (id) => ({ url: `/users/${id}/toggle-active`, method: 'PUT' }),
+      invalidatesTags: ['User', 'AdminUser'],
+    }),
+    deleteUser: builder.mutation<{ success: boolean; message: string }, string>({
+      query: (id) => ({ url: `/users/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['User', 'AdminUser'],
     }),
   }),
 });
@@ -321,4 +336,7 @@ export const {
   useGetBatchAnalyticsQuery,
   useGetUsersQuery,
   useUpdateUserRoleMutation,
+  useCreateAdminUserMutation,
+  useToggleUserActiveMutation,
+  useDeleteUserMutation,
 } = lmsApi;

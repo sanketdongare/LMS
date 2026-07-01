@@ -50,10 +50,11 @@ const navItems = [
     roles: ['SUPER_ADMIN', 'UNIVERSITY_ADMIN', 'INSTITUTE_ADMIN', 'INSTRUCTOR', 'STUDENT'],
   },
   {
-    label: 'Users',
+    label: 'Manage Users',
     icon: <People />,
     href: '/dashboard/users',
-    roles: ['SUPER_ADMIN'],
+    roles: ['SUPER_ADMIN', 'UNIVERSITY_ADMIN', 'INSTITUTE_ADMIN'],
+    badge: 'Admin',
   },
   {
     label: 'Roles & Permissions',
