@@ -145,15 +145,14 @@ router.post('/create-admin', authorize('SUPER_ADMIN', 'UNIVERSITY_ADMIN', 'INSTI
       data: { firebaseUid, email, name, role },
     });
 
-    // Send the welcome email with credentials
-    // Note: This is an async action but we can await it or handle in background. Let's do it and log.
-    await sendWelcomeEmail({
+    // Send the welcome email with credentials in the background so it doesn't block the API response
+    sendWelcomeEmail({
       email,
       name,
       role,
       tempPassword,
       adminId: user.id
-    });
+    }).catch(err => console.error('✉️ Background email error:', err.message));
 
     res.status(201).json({ success: true, data: user, message: `${role} created successfully. An email with login details has been sent.` });
   } catch (error) {
