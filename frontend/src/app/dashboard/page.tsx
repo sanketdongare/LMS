@@ -10,7 +10,6 @@ import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 
 import { CardActionArea } from '@mui/material';
-import QuickCreatorWizard from '@/components/dashboard/QuickCreatorWizard';
 
 const StatCard = ({
   title, value, subtitle, icon, gradient, loading, href,
@@ -76,9 +75,6 @@ export default function DashboardPage() {
             System overview for Smart Digital LMS Administrator.
           </Typography>
         </Box>
-
-        {/* Quick Creator Wizard */}
-        <QuickCreatorWizard />
 
         {/* Stats Grid */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -255,9 +251,6 @@ export default function DashboardPage() {
             Managing Campus: <strong style={{ color: '#0891b2' }}>{stats?.instituteName || 'Your Institute'} ({stats?.instituteCode || '—'})</strong> · {stats?.universityName}
           </Typography>
         </Box>
-
-        {/* Quick Creator Wizard */}
-        <QuickCreatorWizard />
 
         {/* Stats Grid */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -455,9 +448,6 @@ export default function DashboardPage() {
             Managing: <strong style={{ color: '#0891b2' }}>{stats?.universityName || 'Your University'} ({stats?.universityCode || '—'})</strong>
           </Typography>
         </Box>
-
-        {/* Quick Creator Wizard */}
-        <QuickCreatorWizard />
 
         {/* Stats Grid */}
         <Grid container spacing={3} sx={{ mb: 4 }}>

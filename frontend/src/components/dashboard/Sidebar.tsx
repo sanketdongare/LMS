@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import {
   Dashboard, School, People, MenuBook, Notifications, Settings,
-  ExpandLess, ExpandMore, AdminPanelSettings, Analytics, Logout, AccountBalance, Class, Security,
+  ExpandLess, ExpandMore, AdminPanelSettings, Analytics, Logout, AccountBalance, Class, Security, Add,
 } from '@mui/icons-material';
 import { useAppSelector, useAppDispatch } from '@/store/store';
 import { logout } from '@/store/slices/authSlice';
@@ -48,6 +48,12 @@ const navItems = [
     icon: <MenuBook />,
     href: '/dashboard/courses',
     roles: ['SUPER_ADMIN', 'UNIVERSITY_ADMIN', 'INSTITUTE_ADMIN', 'INSTRUCTOR', 'STUDENT'],
+  },
+  {
+    label: 'Quick Creator',
+    icon: <Add />,
+    href: '/dashboard/quick-creator',
+    roles: ['SUPER_ADMIN', 'UNIVERSITY_ADMIN', 'INSTITUTE_ADMIN'],
   },
   {
     label: 'Manage Users',
