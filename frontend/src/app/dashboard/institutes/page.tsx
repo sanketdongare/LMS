@@ -18,6 +18,7 @@ import {
 import type { Institute } from '@/store/slices/instituteSlice';
 import { useAppSelector } from '@/store/store';
 import InstituteFormModal from '@/components/institutes/InstituteFormModal';
+import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
 
@@ -45,6 +46,7 @@ function StatCard({ label, value, icon, gradient, loading }: {
 }
 
 export default function InstitutesPage() {
+  const router = useRouter();
   const { user } = useAppSelector((s) => s.auth);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -106,6 +108,7 @@ export default function InstitutesPage() {
   };
 
   const openMenu = (e: React.MouseEvent<HTMLElement>, inst: Institute) => {
+    e.stopPropagation();
     setAnchorEl(e.currentTarget);
     setActiveRow(inst);
   };
@@ -268,7 +271,8 @@ export default function InstitutesPage() {
                 <TableRow
                   key={inst.id}
                   className="table-row-hover"
-                  sx={{ transition: 'background 0.15s' }}
+                  onClick={() => router.push(`/dashboard/programs?instituteId=${inst.id}`)}
+                  sx={{ transition: 'background 0.15s', cursor: 'pointer' }}
                 >
                   {/* Name */}
                   <TableCell>

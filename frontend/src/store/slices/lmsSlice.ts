@@ -139,7 +139,7 @@ export const lmsApi = createApi({
   tagTypes: ['Program', 'Batch', 'Semester', 'Course', 'Learner', 'Announcement', 'Survey', 'Analytics', 'User', 'AdminUser'],
   endpoints: (builder) => ({
     // Programs
-    getPrograms: builder.query<{ success: boolean; data: Program[] }, { search?: string } | void>({
+    getPrograms: builder.query<{ success: boolean; data: Program[] }, { search?: string; instituteId?: string } | void>({
       query: (params) => ({
         url: '/programs',
         params: params || {},

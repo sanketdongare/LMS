@@ -1,5 +1,7 @@
 'use client';
 import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useGetInstitutesQuery } from '@/store/slices/instituteSlice';
 import {
   Box, Grid, Card, CardContent, Typography, Button, TextField,
   IconButton, Chip, List, ListItem, ListItemButton, ListItemText,
@@ -45,6 +47,9 @@ import toast from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function ProgramsAndBatchesPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const instituteId = searchParams.get('instituteId') || '';
   const { user } = useAppSelector((s) => s.auth);
   const canManage = ['SUPER_ADMIN', 'UNIVERSITY_ADMIN', 'INSTITUTE_ADMIN'].includes(user?.role || '');
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
@@ -76,8 +81,16 @@ export default function ProgramsAndBatchesPage() {
   const [selectedSurveyId, setSelectedSurveyId] = useState<string | null>(null);
 
   // Queries
-  const { data: programsRes, isLoading: progLoading } = useGetProgramsQuery();
+  const { data: programsRes, isLoading: progLoading } = useGetProgramsQuery(
+    instituteId ? { instituteId } : undefined
+  );
   const programs = programsRes?.data || [];
+
+  const { data: institutesRes } = useGetInstitutesQuery(
+    { limit: 100 },
+    { skip: !instituteId }
+  );
+  const selectedInstitute = (institutesRes?.data || []).find((i) => i.id === instituteId);
 
   const { data: batchesRes, isLoading: batchLoading } = useGetBatchesQuery(selectedProgramId || '', {
     skip: !selectedProgramId,
@@ -95,7 +108,7 @@ export default function ProgramsAndBatchesPage() {
 
   const handleCreateProgram = async () => {
     try {
-      await createProgram(progForm).unwrap();
+      await createProgram({ ...progForm, instituteId: instituteId || undefined }).unwrap();
       toast.success('Program created successfully');
       setProgModalOpen(false);
       setProgForm({ name: '', code: '', description: '' });
@@ -169,8 +182,21 @@ export default function ProgramsAndBatchesPage() {
         <>
           {/* ── Dashboard Header ── */}
           <Box sx={{ mb: 4 }}>
+            {selectedInstitute && (
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<ArrowBack />}
+                onClick={() => router.push('/dashboard/institutes')}
+                sx={{ mb: 2, borderColor: 'rgba(8, 145, 178, 0.3)', borderRadius: 2 }}
+              >
+                Back to Institutes
+              </Button>
+            )}
             <Typography variant="h4" fontWeight={700}>
-              <span className="gradient-text">Programs &amp; Batches</span>
+              <span className="gradient-text">
+                Programs &amp; Batches {selectedInstitute ? `(${selectedInstitute.name})` : ''}
+              </span>
             </Typography>
             <Typography variant="body2" color="text.secondary" mt={0.5}>
               Create academic programs and batches, assign semesters, enroll learners, and deploy surveys.

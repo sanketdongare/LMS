@@ -6,18 +6,26 @@ const prisma = require('../config/prisma');
  */
 const getPrograms = async (req, res) => {
   try {
-    const { search = '' } = req.query;
+    const { search = '', instituteId } = req.query;
     const role = req.user.role;
     let whereClause = {};
 
     if (role === 'SUPER_ADMIN') {
       whereClause = {};
+      if (instituteId) {
+        whereClause.instituteId = instituteId;
+      }
     } else if (role === 'UNIVERSITY_ADMIN') {
       const university = await prisma.university.findFirst({
         where: { adminId: req.user.id },
       });
       if (university) {
-        whereClause = { institute: { universityId: university.id } };
+        whereClause = { 
+          institute: { 
+            universityId: university.id,
+            ...(instituteId && { id: instituteId })
+          } 
+        };
       } else {
         return res.json({ success: true, data: [] });
       }
