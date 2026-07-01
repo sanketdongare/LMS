@@ -3,6 +3,34 @@ const router = express.Router();
 const prisma = require('../config/prisma');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
 const { getFirebaseAdmin } = require('../config/firebase');
+const crypto = require('crypto');
+const { sendWelcomeEmail } = require('../config/email');
+
+/**
+ * Generates a secure temporary password with uppercase, lowercase, numbers, and symbols.
+ */
+function generateTempPassword() {
+  const length = 12;
+  const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lowercase = 'abcdefghijkmnopqrstuvwxyz'; // Omit l, I, o
+  const numbers = '23456789'; // Omit 0, 1
+  const symbols = '!@#$%&*?';
+  const allChars = uppercase + lowercase + numbers + symbols;
+  
+  let password = '';
+  // Ensure at least one character of each type is present
+  password += uppercase[crypto.randomInt(0, uppercase.length)];
+  password += lowercase[crypto.randomInt(0, lowercase.length)];
+  password += numbers[crypto.randomInt(0, numbers.length)];
+  password += symbols[crypto.randomInt(0, symbols.length)];
+  
+  for (let i = 4; i < length; i++) {
+    password += allChars[crypto.randomInt(0, allChars.length)];
+  }
+  
+  // Shuffle the password characters
+  return password.split('').sort(() => 0.5 - Math.random()).join('');
+}
 
 router.use(authenticate);
 
@@ -70,11 +98,11 @@ router.get('/', authorize('SUPER_ADMIN', 'UNIVERSITY_ADMIN', 'INSTITUTE_ADMIN'),
 // Creates a Firebase Auth user + DB record for admin roles
 router.post('/create-admin', authorize('SUPER_ADMIN', 'UNIVERSITY_ADMIN', 'INSTITUTE_ADMIN'), async (req, res) => {
   try {
-    const { email, name, password, role } = req.body;
+    const { email, name, role } = req.body;
     const currentUser = req.user;
 
-    if (!email || !name || !password || !role) {
-      return res.status(400).json({ success: false, message: 'email, name, password, and role are required' });
+    if (!email || !name || !role) {
+      return res.status(400).json({ success: false, message: 'email, name, and role are required' });
     }
 
     // Role permission checks
@@ -88,6 +116,9 @@ router.post('/create-admin', authorize('SUPER_ADMIN', 'UNIVERSITY_ADMIN', 'INSTI
       return res.status(403).json({ success: false, message: `You cannot create users with role: ${role}` });
     }
 
+    // Auto-generate secure temporary password
+    const tempPassword = generateTempPassword();
+
     const admin = getFirebaseAdmin();
 
     // Check if Firebase user already exists
@@ -97,7 +128,7 @@ router.post('/create-admin', authorize('SUPER_ADMIN', 'UNIVERSITY_ADMIN', 'INSTI
       firebaseUid = existingFbUser.uid;
     } catch (e) {
       if (e.code === 'auth/user-not-found') {
-        const newFbUser = await admin.auth().createUser({ email, password, displayName: name, emailVerified: true });
+        const newFbUser = await admin.auth().createUser({ email, password: tempPassword, displayName: name, emailVerified: true });
         firebaseUid = newFbUser.uid;
       } else {
         throw e;
@@ -114,7 +145,17 @@ router.post('/create-admin', authorize('SUPER_ADMIN', 'UNIVERSITY_ADMIN', 'INSTI
       data: { firebaseUid, email, name, role },
     });
 
-    res.status(201).json({ success: true, data: user, message: `${role} created successfully` });
+    // Send the welcome email with credentials
+    // Note: This is an async action but we can await it or handle in background. Let's do it and log.
+    await sendWelcomeEmail({
+      email,
+      name,
+      role,
+      tempPassword,
+      adminId: user.id
+    });
+
+    res.status(201).json({ success: true, data: user, message: `${role} created successfully. An email with login details has been sent.` });
   } catch (error) {
     console.error('Create admin error:', error);
     if (error.code === 'auth/email-already-exists') {

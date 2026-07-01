@@ -39,7 +39,6 @@ interface FormData {
 interface AdminForm {
   name: string;
   email: string;
-  password: string;
 }
 
 const defaultForm: FormData = {
@@ -47,7 +46,7 @@ const defaultForm: FormData = {
   address: '', website: '', description: '', logo: '',
   universityId: '',
 };
-const defaultAdminForm: AdminForm = { name: '', email: '', password: '' };
+const defaultAdminForm: AdminForm = { name: '', email: '' };
 
 export default function InstituteFormModal({ open, onClose, institute, universityId: propUniversityId }: Props) {
   const { user } = useAppSelector((s) => s.auth);
@@ -61,7 +60,6 @@ export default function InstituteFormModal({ open, onClose, institute, universit
   const [selectedAdminId, setSelectedAdminId] = useState('');
   const [adminForm, setAdminForm] = useState<AdminForm>(defaultAdminForm);
   const [adminError, setAdminError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
 
   const [createInstitute, { isLoading: isCreating }] = useCreateInstituteMutation();
   const [updateInstitute, { isLoading: isUpdating }] = useUpdateInstituteMutation();
@@ -131,19 +129,14 @@ export default function InstituteFormModal({ open, onClose, institute, universit
 
     // Create new admin if "Create New Admin" tab is active
     if (adminSectionOpen && adminTab === 1) {
-      if (!adminForm.name || !adminForm.email || !adminForm.password) {
+      if (!adminForm.name || !adminForm.email) {
         setAdminError('Please fill all admin fields or close the admin section.');
-        return;
-      }
-      if (adminForm.password.length < 8) {
-        setAdminError('Password must be at least 8 characters.');
         return;
       }
       try {
         const res = await createAdminUser({
           name: adminForm.name,
           email: adminForm.email,
-          password: adminForm.password,
           role: 'INSTITUTE_ADMIN',
         }).unwrap();
         resolvedAdminId = res.data.id;
@@ -349,27 +342,8 @@ export default function InstituteFormModal({ open, onClose, institute, universit
                       <TextField size="small" fullWidth label="Admin Email *" type="email" placeholder="admin@institute.edu" value={adminForm.email} onChange={(e) => setAdminForm(f => ({ ...f, email: e.target.value }))} />
                     </Grid>
                     <Grid item xs={12}>
-                      <TextField
-                        size="small" fullWidth label="Password *"
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Min. 8 characters"
-                        value={adminForm.password}
-                        onChange={(e) => setAdminForm(f => ({ ...f, password: e.target.value }))}
-                        helperText="The admin will use this to log in"
-                        InputProps={{
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              <IconButton size="small" onClick={() => setShowPassword(!showPassword)}>
-                                {showPassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
-                              </IconButton>
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
                       <Alert severity="info" icon={<AdminPanelSettings fontSize="small" />}>
-                        An <strong>Institute Admin</strong> account will be created in Firebase and linked to this institute.
+                        An <strong>Institute Admin</strong> account will be created. A secure temporary password will be automatically generated and emailed to the admin containing their credentials.
                       </Alert>
                     </Grid>
                   </Grid>

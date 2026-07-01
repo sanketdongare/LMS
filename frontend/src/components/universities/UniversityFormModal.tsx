@@ -40,7 +40,6 @@ interface FormData {
 interface AdminForm {
   name: string;
   email: string;
-  password: string;
 }
 
 const defaultForm: FormData = {
@@ -48,7 +47,7 @@ const defaultForm: FormData = {
   address: '', website: '', description: '', logo: '',
 };
 
-const defaultAdminForm: AdminForm = { name: '', email: '', password: '' };
+const defaultAdminForm: AdminForm = { name: '', email: '' };
 
 export default function UniversityFormModal({ open, onClose, university }: Props) {
   const isEditing = Boolean(university);
@@ -61,7 +60,6 @@ export default function UniversityFormModal({ open, onClose, university }: Props
   const [selectedAdminId, setSelectedAdminId] = useState<string>('');
   const [adminForm, setAdminForm] = useState<AdminForm>(defaultAdminForm);
   const [adminError, setAdminError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [adminSearchInput, setAdminSearchInput] = useState('');
 
   const [createUniversity, { isLoading: isCreating }] = useCreateUniversityMutation();
@@ -126,19 +124,14 @@ export default function UniversityFormModal({ open, onClose, university }: Props
     // If "Create New Admin" tab is open, create the admin first
     let resolvedAdminId = selectedAdminId;
     if (adminSectionOpen && adminTab === 1) {
-      if (!adminForm.name || !adminForm.email || !adminForm.password) {
+      if (!adminForm.name || !adminForm.email) {
         setAdminError('Please fill in all admin fields or close the admin section.');
-        return;
-      }
-      if (adminForm.password.length < 8) {
-        setAdminError('Admin password must be at least 8 characters.');
         return;
       }
       try {
         const res = await createAdminUser({
           name: adminForm.name,
           email: adminForm.email,
-          password: adminForm.password,
           role: 'UNIVERSITY_ADMIN',
         }).unwrap();
         resolvedAdminId = res.data.id;
@@ -338,27 +331,8 @@ export default function UniversityFormModal({ open, onClose, university }: Props
                       <TextField size="small" fullWidth label="Admin Email *" type="email" placeholder="admin@university.edu" value={adminForm.email} onChange={(e) => setAdminForm(f => ({ ...f, email: e.target.value }))} />
                     </Grid>
                     <Grid item xs={12}>
-                      <TextField
-                        size="small" fullWidth label="Password *"
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Min. 8 characters"
-                        value={adminForm.password}
-                        onChange={(e) => setAdminForm(f => ({ ...f, password: e.target.value }))}
-                        helperText="The admin will use this password to log in"
-                        InputProps={{
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              <IconButton size="small" onClick={() => setShowPassword(!showPassword)}>
-                                {showPassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
-                              </IconButton>
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
                       <Alert severity="info" icon={<AdminPanelSettings fontSize="small" />}>
-                        A <strong>University Admin</strong> account will be created in Firebase and linked to this university.
+                        A <strong>University Admin</strong> account will be created. A secure temporary password will be automatically generated and emailed to the admin containing their credentials.
                       </Alert>
                     </Grid>
                   </Grid>

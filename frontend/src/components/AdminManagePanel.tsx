@@ -75,8 +75,7 @@ export default function AdminManagePanel({
   const [createOpen, setCreateOpen] = useState(false);
 
   // Create form state
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: creatableRoles[0] || '' });
-  const [showPassword, setShowPassword] = useState(false);
+  const [form, setForm] = useState({ name: '', email: '', role: creatableRoles[0] || '' });
   const [formError, setFormError] = useState('');
 
   // RTK hooks
@@ -132,19 +131,15 @@ export default function AdminManagePanel({
   // Create admin
   const handleCreate = async () => {
     setFormError('');
-    if (!form.name || !form.email || !form.password || !form.role) {
+    if (!form.name || !form.email || !form.role) {
       setFormError('All fields are required.');
-      return;
-    }
-    if (form.password.length < 8) {
-      setFormError('Password must be at least 8 characters.');
       return;
     }
     try {
       const res = await createAdminUser(form).unwrap();
-      toast.success(res.message || 'User created successfully');
+      toast.success(res.message || 'User created successfully. Credentials email sent.');
       setCreateOpen(false);
-      setForm({ name: '', email: '', password: '', role: creatableRoles[0] || '' });
+      setForm({ name: '', email: '', role: creatableRoles[0] || '' });
     } catch (err: any) {
       setFormError(err?.data?.message || 'Failed to create user');
     }
@@ -344,23 +339,6 @@ export default function AdminManagePanel({
               fullWidth size="small"
               placeholder="user@institution.edu"
             />
-            <TextField
-              label="Password"
-              type={showPassword ? 'text' : 'password'}
-              value={form.password}
-              onChange={(e) => setForm(f => ({ ...f, password: e.target.value }))}
-              fullWidth size="small"
-              helperText="Minimum 8 characters"
-              InputProps={{
-                endAdornment: (
-                  <MuiInputAdornment position="end">
-                    <IconButton size="small" onClick={() => setShowPassword(!showPassword)}>
-                      {showPassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
-                    </IconButton>
-                  </MuiInputAdornment>
-                ),
-              }}
-            />
             <FormControl fullWidth size="small">
               <InputLabel>Role</InputLabel>
               <Select value={form.role} label="Role" onChange={(e) => setForm(f => ({ ...f, role: e.target.value }))}>
@@ -369,6 +347,9 @@ export default function AdminManagePanel({
                 ))}
               </Select>
             </FormControl>
+            <Alert severity="info" sx={{ mt: 1 }}>
+              <strong>🔒 Auto-generated Password:</strong> A secure temporary password will be automatically generated and emailed to the user containing their Admin ID and login credentials. They can change it later using the 'Forgot Password' link.
+            </Alert>
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2.5, gap: 1 }}>

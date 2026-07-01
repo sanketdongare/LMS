@@ -289,7 +289,7 @@ export const lmsApi = createApi({
     }),
     createAdminUser: builder.mutation<
       { success: boolean; data: any; message: string },
-      { email: string; name: string; password: string; role: string }
+      { email: string; name: string; password?: string; role: string }
     >({
       query: (body) => ({ url: '/users/create-admin', method: 'POST', body }),
       invalidatesTags: ['User', 'AdminUser'],
