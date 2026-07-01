@@ -32,6 +32,7 @@ const sendWelcomeEmail = async ({ email, name, role, tempPassword, adminId }) =>
     host: 'smtp.gmail.com',
     port: 587,
     secure: false, // false for port 587 (STARTTLS)
+    family: 4, // Force IPv4 only
     auth: {
       user: emailUser,
       pass: emailPass,
