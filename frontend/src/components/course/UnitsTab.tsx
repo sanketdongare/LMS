@@ -22,16 +22,6 @@ import {
 } from '@/store/slices/courseSlice';
 import QuizSection from './QuizSection';
 
-// Lazy-load LiveEditor (Monaco code editor)
-const LiveEditor = dynamic(() => import('./LiveEditor'), {
-  ssr: false,
-  loading: () => (
-    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 400 }}>
-      <CircularProgress sx={{ color: '#0891b2' }} />
-    </Box>
-  ),
-});
-
 // Lazy-load UnitEditor (TipTap WYSIWYG page editor)
 const UnitEditor = dynamic(() => import('./UnitEditor'), {
   ssr: false,
@@ -451,17 +441,27 @@ function UnitContentPanel({
           ))}
         </Box>
 
-        {/* Content editor or quiz section */}
         {activeView === 'content' ? (
-          <LiveEditor
-            unitId={unit.id}
-            unitTitle={unit.title}
-            initialHtml={unit.htmlContent || ''}
-            initialCss={unit.cssContent || ''}
-            initialJs={unit.jsContent || ''}
-            canEdit={canManage}
-            onSave={handleSave}
-          />
+          <Box sx={{
+            bgcolor: '#fff',
+            borderRadius: 2,
+            border: '1px solid #e5e7eb',
+            p: { xs: 3, md: 5 },
+            minHeight: 500,
+            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+            '& h1': { fontSize: '1.6rem', fontWeight: 800, mb: 1, mt: 1.5 },
+            '& h2': { fontSize: '1.3rem', fontWeight: 700, mb: 1, mt: 1.5 },
+            '& h3': { fontSize: '1.1rem', fontWeight: 700, mb: 0.8 },
+            '& p': { mb: 0.8, mt: 0, lineHeight: 1.7, color: '#374151' },
+            '& ul, & ol': { pl: 3, mb: 1, color: '#374151' },
+            '& li': { mb: 0.3 },
+            '& a': { color: '#0891b2', textDecoration: 'underline' },
+            '& img': { maxWidth: '100%', borderRadius: 1, my: 1 },
+            '& blockquote': { borderLeft: '4px solid #0891b2', pl: 2, color: '#6b7280', my: 1.5, fontStyle: 'italic' },
+            '& iframe': { width: '100%', aspectRatio: '16/9', border: 'none', borderRadius: 2, my: 1.5 },
+          }}>
+            <div dangerouslySetInnerHTML={{ __html: unit.htmlContent || '<p>No content available.</p>' }} />
+          </Box>
         ) : (
           <QuizSection unitId={unit.id} quizzes={quizzes} canManage={canManage} userId={userId} />
         )}
