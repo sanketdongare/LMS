@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import Providers from '@/components/providers/Providers';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';
+import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AppRouterCacheProvider options={{ enableCssLayer: false }}>
           <Providers>{children}</Providers>
         </AppRouterCacheProvider>
+        <Analytics />
       </body>
     </html>
   );
