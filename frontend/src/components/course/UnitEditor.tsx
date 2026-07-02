@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   Box, Typography, Button, IconButton, Chip, TextField, Tooltip, Divider, Switch,
-  FormControlLabel, Collapse,
+  FormControlLabel, Collapse, Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import {
   ArrowBack, Save, Close, ChevronRight, CheckCircle, Visibility, VisibilityOff,
@@ -22,6 +22,7 @@ import Heading from '@tiptap/extension-heading';
 import Highlight from '@tiptap/extension-highlight';
 import Youtube from '@tiptap/extension-youtube';
 import toast from 'react-hot-toast';
+import Editor from '@monaco-editor/react';
 
 import { CourseUnit, useUpdateCourseUnitMutation } from '@/store/slices/courseSlice';
 
@@ -263,7 +264,7 @@ export default function UnitEditor({ unit, unitIndex, onBack }: UnitEditorProps)
   const [isPublished, setIsPublished] = useState(unit.isPublished);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   
-  const [viewMode, setViewMode] = useState<'visual' | 'code'>('visual');
+  const [codeDialogOpen, setCodeDialogOpen] = useState(false);
   const [rawHtml, setRawHtml] = useState('');
 
   const editor = useEditor({
@@ -288,22 +289,22 @@ export default function UnitEditor({ unit, unitIndex, onBack }: UnitEditorProps)
   useEffect(() => {
     if (editor && unit.htmlContent && editor.getHTML() !== unit.htmlContent) {
       editor.commands.setContent(unit.htmlContent || '');
-      if (viewMode === 'code') setRawHtml(unit.htmlContent || '');
+      if (codeDialogOpen) setRawHtml(unit.htmlContent || '');
     }
     setTitle(unit.title);
     setIsPublished(unit.isPublished);
   }, [unit.id]);
 
-  const toggleViewMode = useCallback(() => {
-    setViewMode(prev => {
-      if (prev === 'visual') {
-        setRawHtml(editor?.getHTML() || '');
-        return 'code';
-      } else {
-        editor?.commands.setContent(rawHtml);
-        return 'visual';
-      }
-    });
+  const openCodeDialog = useCallback(() => {
+    setRawHtml(editor?.getHTML() || '');
+    setCodeDialogOpen(true);
+  }, [editor]);
+
+  const closeCodeDialog = useCallback((save: boolean) => {
+    if (save && editor) {
+      editor.commands.setContent(rawHtml);
+    }
+    setCodeDialogOpen(false);
   }, [editor, rawHtml]);
 
   // Keyboard shortcut Ctrl+Shift+H
@@ -311,12 +312,12 @@ export default function UnitEditor({ unit, unitIndex, onBack }: UnitEditorProps)
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'h') {
         e.preventDefault();
-        toggleViewMode();
+        openCodeDialog();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [toggleViewMode]);
+  }, [openCodeDialog]);
 
   const handleSave = useCallback(async (andClose = false) => {
     if (!title.trim()) { toast.error('Page title is required'); return; }
@@ -325,7 +326,7 @@ export default function UnitEditor({ unit, unitIndex, onBack }: UnitEditorProps)
         unitId: unit.id,
         body: {
           title,
-          htmlContent: viewMode === 'code' ? rawHtml : (editor?.getHTML() || ''),
+          htmlContent: editor?.getHTML() || '',
           isPublished,
         },
       }).unwrap();
@@ -340,13 +341,12 @@ export default function UnitEditor({ unit, unitIndex, onBack }: UnitEditorProps)
   // Auto-save every 30s
   useEffect(() => {
     const interval = setInterval(() => {
-      if (title) {
-        const currentHtml = viewMode === 'code' ? rawHtml : (editor?.getHTML() || '');
-        updateUnit({ unitId: unit.id, body: { title, htmlContent: currentHtml, isPublished } });
+      if (title && editor) {
+        updateUnit({ unitId: unit.id, body: { title, htmlContent: editor.getHTML(), isPublished } });
       }
     }, 30000);
     return () => clearInterval(interval);
-  }, [title, isPublished, editor, unit.id, viewMode, rawHtml]);
+  }, [title, isPublished, editor, unit.id]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: '#fff' }}>
@@ -478,33 +478,11 @@ export default function UnitEditor({ unit, unitIndex, onBack }: UnitEditorProps)
               '& mark': { bgcolor: '#fef9c3', borderRadius: 0.5, px: 0.3 },
             },
           }}>
-            <Box sx={{ pointerEvents: viewMode === 'code' ? 'none' : 'auto', opacity: viewMode === 'code' ? 0.6 : 1 }}>
-              <EditorToolbar editor={editor} viewMode={viewMode} onToggleViewMode={toggleViewMode} />
+            <Box>
+              <EditorToolbar editor={editor} viewMode="visual" onToggleViewMode={openCodeDialog} />
             </Box>
             <Box sx={{ bgcolor: '#fff', position: 'relative' }}>
-              {viewMode === 'visual' ? (
-                <EditorContent editor={editor} />
-              ) : (
-                <Box
-                  component="textarea"
-                  value={rawHtml}
-                  onChange={(e) => setRawHtml(e.target.value)}
-                  sx={{
-                    width: '100%',
-                    minHeight: 380,
-                    p: 3,
-                    border: 'none',
-                    outline: 'none',
-                    bgcolor: '#F8FAFC',
-                    color: '#334155',
-                    fontFamily: 'monospace',
-                    fontSize: '0.9rem',
-                    lineHeight: 1.6,
-                    resize: 'none',
-                  }}
-                  spellCheck={false}
-                />
-              )}
+              <EditorContent editor={editor} />
             </Box>
             {/* Resize handle visual */}
             <Box sx={{ height: 8, bgcolor: '#f9fafb', borderTop: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', pr: 1 }}>
@@ -599,6 +577,45 @@ export default function UnitEditor({ unit, unitIndex, onBack }: UnitEditorProps)
           </Typography>
         </Box>
       </Box>
+
+      {/* Code Editor Dialog */}
+      <Dialog
+        open={codeDialogOpen}
+        onClose={() => closeCodeDialog(false)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{ sx: { height: '80vh', display: 'flex', flexDirection: 'column' } }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
+          <Typography variant="h6" fontWeight={700}>Source Code Editor</Typography>
+          <IconButton onClick={() => closeCodeDialog(false)} size="small">
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ flex: 1, p: 0, overflow: 'hidden' }}>
+          <Editor
+            height="100%"
+            language="html"
+            theme="vs-dark"
+            value={rawHtml}
+            onChange={(value) => setRawHtml(value || '')}
+            options={{
+              minimap: { enabled: false },
+              fontSize: 14,
+              wordWrap: 'on',
+              formatOnPaste: true,
+            }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2, bgcolor: '#f9fafb', borderTop: '1px solid #e5e7eb' }}>
+          <Button onClick={() => closeCodeDialog(false)} color="inherit" sx={{ fontWeight: 600 }}>
+            Cancel
+          </Button>
+          <Button onClick={() => closeCodeDialog(true)} variant="contained" sx={{ bgcolor: '#0891b2', '&:hover': { bgcolor: '#0e7490' }, fontWeight: 600 }}>
+            Apply Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
