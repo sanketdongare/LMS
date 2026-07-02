@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { Box, Grid, Card, CardContent, Typography, Skeleton, Avatar, Chip } from '@mui/material';
 import {
   School, People, MenuBook, TrendingUp, Add, AccountBalance,
@@ -10,6 +10,8 @@ import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 
 import { CardActionArea } from '@mui/material';
+import dynamic from 'next/dynamic';
+const ClayDashboard = dynamic(() => import('@/app/dashboard/clay/page'), { ssr: false });
 
 const StatCard = ({
   title, value, subtitle, icon, gradient, loading, href,
@@ -69,7 +71,7 @@ export default function DashboardPage() {
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" sx={{ fontWeight: 700 }}>
             Welcome back,{' '}
-            <span className="gradient-text">{user?.name?.split(' ')[0] || 'Admin'}</span> 👋
+            <span className="gradient-text">{user?.name?.split(' ')[0] || 'Admin'}</span> ðŸ‘‹
           </Typography>
           <Typography variant="body1" sx={{ color: 'text.secondary', mt: 0.5 }}>
             System overview for Smart Digital LMS Administrator.
@@ -81,7 +83,7 @@ export default function DashboardPage() {
           <Grid item xs={12} sm={6} lg={3}>
             <StatCard
               title="Total Universities"
-              value={stats?.total ?? '—'}
+              value={stats?.total ?? 'â€”'}
               subtitle={`${stats?.active ?? 0} active`}
               icon={<School sx={{ color: '#6366f1', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(99,102,241,0.25), rgba(99,102,241,0.05))"
@@ -92,7 +94,7 @@ export default function DashboardPage() {
           <Grid item xs={12} sm={6} lg={3}>
             <StatCard
               title="Total Institutes"
-              value={stats?.totalInstitutes ?? '—'}
+              value={stats?.totalInstitutes ?? 'â€”'}
               subtitle="Registered institutes"
               icon={<AccountBalance sx={{ color: '#a855f7', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(168,85,247,0.25), rgba(168,85,247,0.05))"
@@ -103,7 +105,7 @@ export default function DashboardPage() {
           <Grid item xs={12} sm={6} lg={3}>
             <StatCard
               title="Total Courses"
-              value={stats?.totalCourses ?? '—'}
+              value={stats?.totalCourses ?? 'â€”'}
               subtitle="Across all universities"
               icon={<MenuBook sx={{ color: '#10b981', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(16,185,129,0.25), rgba(16,185,129,0.05))"
@@ -114,7 +116,7 @@ export default function DashboardPage() {
           <Grid item xs={12} sm={6} lg={3}>
             <StatCard
               title="Total Users"
-              value={stats?.totalUsers ?? '—'}
+              value={stats?.totalUsers ?? 'â€”'}
               subtitle="Active accounts"
               icon={<People sx={{ color: '#f59e0b', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(245,158,11,0.25), rgba(245,158,11,0.05))"
@@ -245,10 +247,10 @@ export default function DashboardPage() {
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" sx={{ fontWeight: 700 }}>
             Welcome back,{' '}
-            <span className="gradient-text">{user?.name?.split(' ')[0] || 'Admin'}</span> 👋
+            <span className="gradient-text">{user?.name?.split(' ')[0] || 'Admin'}</span> ðŸ‘‹
           </Typography>
           <Typography variant="body1" sx={{ color: 'text.secondary', mt: 0.5 }}>
-            Managing Campus: <strong style={{ color: '#0891b2' }}>{stats?.instituteName || 'Your Institute'} ({stats?.instituteCode || '—'})</strong> · {stats?.universityName}
+            Managing Campus: <strong style={{ color: '#0891b2' }}>{stats?.instituteName || 'Your Institute'} ({stats?.instituteCode || 'â€”'})</strong> Â· {stats?.universityName}
           </Typography>
         </Box>
 
@@ -257,7 +259,7 @@ export default function DashboardPage() {
           <Grid item xs={12} sm={6} lg={3}>
             <StatCard
               title="Total Programs"
-              value={stats?.totalPrograms ?? '—'}
+              value={stats?.totalPrograms ?? 'â€”'}
               subtitle="Academic programs"
               icon={<Class sx={{ color: '#0891b2', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(8, 145, 178, 0.25), rgba(8, 145, 178, 0.05))"
@@ -268,7 +270,7 @@ export default function DashboardPage() {
           <Grid item xs={12} sm={6} lg={3}>
             <StatCard
               title="Total Batches"
-              value={stats?.totalBatches ?? '—'}
+              value={stats?.totalBatches ?? 'â€”'}
               subtitle="Active class groups"
               icon={<School sx={{ color: '#a855f7', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(168, 85, 247, 0.05))"
@@ -279,7 +281,7 @@ export default function DashboardPage() {
           <Grid item xs={12} sm={6} lg={3}>
             <StatCard
               title="Enrolled Learners"
-              value={stats?.totalLearners ?? '—'}
+              value={stats?.totalLearners ?? 'â€”'}
               subtitle="Enrolled students"
               icon={<People sx={{ color: '#10b981', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(16, 185, 129, 0.05))"
@@ -290,7 +292,7 @@ export default function DashboardPage() {
           <Grid item xs={12} sm={6} lg={3}>
             <StatCard
               title="Surveys Created"
-              value={stats?.totalSurveys ?? '—'}
+              value={stats?.totalSurveys ?? 'â€”'}
               subtitle="Feedback surveys"
               icon={<AssignmentTurnedIn sx={{ color: '#f59e0b', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(245, 158, 11, 0.05))"
@@ -380,7 +382,7 @@ export default function DashboardPage() {
                       </Avatar>
                       <Box sx={{ flex: 1 }}>
                         <Typography variant="body2" sx={{ fontWeight: 600 }}>{batch.name}</Typography>
-                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>Program: {batch.program?.name} · {batch.code}</Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>Program: {batch.program?.name} Â· {batch.code}</Typography>
                       </Box>
                       <Typography variant="caption" sx={{ color: 'text.disabled' }}>
                         {formatDistanceToNow(new Date(batch.createdAt), { addSuffix: true })}
@@ -442,10 +444,10 @@ export default function DashboardPage() {
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" sx={{ fontWeight: 700 }}>
             Welcome back,{' '}
-            <span className="gradient-text">{user?.name?.split(' ')[0] || 'Manager'}</span> 👋
+            <span className="gradient-text">{user?.name?.split(' ')[0] || 'Manager'}</span> ðŸ‘‹
           </Typography>
           <Typography variant="body1" sx={{ color: 'text.secondary', mt: 0.5 }}>
-            Managing: <strong style={{ color: '#0891b2' }}>{stats?.universityName || 'Your University'} ({stats?.universityCode || '—'})</strong>
+            Managing: <strong style={{ color: '#0891b2' }}>{stats?.universityName || 'Your University'} ({stats?.universityCode || 'â€”'})</strong>
           </Typography>
         </Box>
 
@@ -454,7 +456,7 @@ export default function DashboardPage() {
           <Grid item xs={12} sm={6} lg={3}>
             <StatCard
               title="Total Institutes"
-              value={stats?.totalInstitutes ?? '—'}
+              value={stats?.totalInstitutes ?? 'â€”'}
               subtitle="Registered in university"
               icon={<AccountBalance sx={{ color: '#a855f7', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(168,85,247,0.25), rgba(168,85,247,0.05))"
@@ -465,7 +467,7 @@ export default function DashboardPage() {
           <Grid item xs={12} sm={6} lg={3}>
             <StatCard
               title="Total Courses"
-              value={stats?.totalCourses ?? '—'}
+              value={stats?.totalCourses ?? 'â€”'}
               subtitle="Offered by university"
               icon={<MenuBook sx={{ color: '#10b981', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(16,185,129,0.25), rgba(16,185,129,0.05))"
@@ -476,7 +478,7 @@ export default function DashboardPage() {
           <Grid item xs={12} sm={6} lg={3}>
             <StatCard
               title="Instructors"
-              value={stats?.totalInstructors ?? '—'}
+              value={stats?.totalInstructors ?? 'â€”'}
               subtitle="Teaching staff"
               icon={<AdminPanelSettings sx={{ color: '#38bdf8', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(56,189,248,0.25), rgba(56,189,248,0.05))"
@@ -487,7 +489,7 @@ export default function DashboardPage() {
           <Grid item xs={12} sm={6} lg={3}>
             <StatCard
               title="Enrolled Students"
-              value={stats?.totalStudents ?? '—'}
+              value={stats?.totalStudents ?? 'â€”'}
               subtitle="Active students"
               icon={<People sx={{ color: '#ec4899', fontSize: 24 }} />}
               gradient="linear-gradient(135deg, rgba(236,72,153,0.25), rgba(236,72,153,0.05))"
@@ -583,144 +585,7 @@ export default function DashboardPage() {
     );
   }
 
-  // --- 3. INSTITUTE USER VIEW (INSTRUCTOR & STUDENT) ---
-  return (
-    <Box className="page-content">
-      {/* Welcome header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Welcome back,{' '}
-          <span className="gradient-text">{user?.name?.split(' ')[0] || 'Learner'}</span> 👋
-        </Typography>
-        <Typography variant="body1" sx={{ color: 'text.secondary', mt: 0.5 }}>
-          {stats?.instituteName ? (
-            <>
-              Campus: <strong style={{ color: '#0891b2' }}>{stats.instituteName}</strong> ({stats.universityName})
-            </>
-          ) : (
-            'Welcome to the Smart Digital Learning platform.'
-          )}
-        </Typography>
-      </Box>
-
-      {/* Stats Grid */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} lg={4}>
-          <StatCard
-            title="Available Courses"
-            value={stats?.totalCourses ?? '—'}
-            subtitle="Explore active courses"
-            icon={<Class sx={{ color: '#10b981', fontSize: 24 }} />}
-            gradient="linear-gradient(135deg, rgba(16,185,129,0.25), rgba(16,185,129,0.05))"
-            loading={isLoading}
-            href="/dashboard/courses"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} lg={4}>
-          <StatCard
-            title="Active Enrollments"
-            value={stats?.activeEnrollments ?? '—'}
-            subtitle="Courses in progress"
-            icon={<BookmarkBorder sx={{ color: '#0ea5e9', fontSize: 24 }} />}
-            gradient="linear-gradient(135deg, rgba(14,165,233,0.25), rgba(14,165,233,0.05))"
-            loading={isLoading}
-            href="/dashboard/courses"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} lg={4}>
-          <StatCard
-            title="Completed Courses"
-            value={stats?.completedCourses ?? '—'}
-            subtitle="Archived achievements"
-            icon={<AssignmentTurnedIn sx={{ color: '#14b8a6', fontSize: 24 }} />}
-            gradient="linear-gradient(135deg, rgba(20,184,166,0.25), rgba(20,184,166,0.05))"
-            loading={isLoading}
-            href="/dashboard/courses"
-          />
-        </Grid>
-      </Grid>
-
-      {/* Recently Added Courses */}
-      <Grid container spacing={3}>
-        <Grid item xs={12} lg={8}>
-          <Card>
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>Recent Courses in Campus</Typography>
-                <Link href="/dashboard/courses" style={{ textDecoration: 'none' }}>
-                  <Chip label="Browse Catalog" variant="outlined" size="small" color="primary" clickable />
-                </Link>
-              </Box>
-
-              {isLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <Box key={i} sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                    <Skeleton variant="circular" width={44} height={44} />
-                    <Box sx={{ flex: 1 }}>
-                      <Skeleton variant="text" width="50%" />
-                      <Skeleton variant="text" width="30%" />
-                    </Box>
-                  </Box>
-                ))
-              ) : stats?.recentCourses?.length === 0 ? (
-                <Box sx={{ textAlign: 'center', py: 4 }}>
-                  <MenuBook sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
-                  <Typography sx={{ color: 'text.secondary' }}>No courses published yet</Typography>
-                </Box>
-              ) : (
-                stats?.recentCourses?.map((course: any) => (
-                  <Box
-                    key={course.id}
-                    sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 1.5, borderRadius: 2, mb: 1, transition: 'background 0.2s', '&:hover': { background: 'rgba(99,102,241,0.08)' } }}
-                  >
-                    <Avatar sx={{ background: 'linear-gradient(135deg, #10b981, #14b8a6)', width: 44, height: 44, fontSize: '1rem', fontWeight: 700 }}>
-                      {course.title?.charAt(0).toUpperCase()}
-                    </Avatar>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{course.title}</Typography>
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                        {course.duration ? `${course.duration} hours` : 'Self-paced'}
-                      </Typography>
-                    </Box>
-                    <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-                      {formatDistanceToNow(new Date(course.createdAt), { addSuffix: true })}
-                    </Typography>
-                  </Box>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Quick Actions */}
-        <Grid item xs={12} lg={4}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent sx={{ p: 3 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>Quick Actions</Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                <Link href="/dashboard/courses" style={{ textDecoration: 'none' }}>
-                  <Box sx={{ p: 2, borderRadius: 2, border: '1px solid rgba(16,185,129,0.2)', cursor: 'pointer', transition: 'all 0.2s', '&:hover': { borderColor: 'primary.main', background: 'rgba(16,185,129,0.08)', transform: 'translateX(4px)' }, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Class sx={{ color: 'primary.main' }} />
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>Browse Courses</Typography>
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>Enroll in learning modules</Typography>
-                    </Box>
-                  </Box>
-                </Link>
-                <Link href="/dashboard/settings" style={{ textDecoration: 'none' }}>
-                  <Box sx={{ p: 2, borderRadius: 2, border: '1px solid rgba(99,102,241,0.2)', cursor: 'pointer', transition: 'all 0.2s', '&:hover': { borderColor: 'secondary.main', background: 'rgba(99,102,241,0.08)', transform: 'translateX(4px)' }, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <People sx={{ color: 'secondary.main' }} />
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>Account Profile</Typography>
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>Manage password and account details</Typography>
-                    </Box>
-                  </Box>
-                </Link>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-    </Box>
-  );
+  // --- 3. STUDENT / INSTRUCTOR VIEW â€” Clay Dashboard ---
+  return <ClayDashboard />;
 }
+
