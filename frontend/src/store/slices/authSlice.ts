@@ -93,12 +93,13 @@ export const loginWithGoogle = createAsyncThunk(
       return user;
     } catch (error: any) {
       console.error('Firebase Google login error:', error);
-      let msg = error.message || 'Google login failed';
-      if (error.code === 'auth/popup-blocked') {
+      let msg = typeof error === 'string' ? error : (error?.message || 'Google login failed');
+      
+      if (error?.code === 'auth/popup-blocked') {
         msg = 'Popup blocked by browser. Please allow popups for this site.';
-      } else if (error.code === 'auth/unauthorized-domain') {
+      } else if (error?.code === 'auth/unauthorized-domain') {
         msg = 'This domain is not authorized in Firebase Console -> Authentication -> Settings -> Authorized domains.';
-      } else if (error.code === 'auth/operation-not-allowed') {
+      } else if (error?.code === 'auth/operation-not-allowed') {
         msg = 'Google Sign-In is not enabled in your Firebase Console (Authentication -> Sign-in method).';
       }
       return rejectWithValue(msg);

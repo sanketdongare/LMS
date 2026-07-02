@@ -15,18 +15,38 @@ const syncUser = async (req, res) => {
       });
     }
 
-    // Upsert user
-    const user = await prisma.user.upsert({
-      where: { firebaseUid },
-      update: { email, name, avatar },
-      create: {
-        firebaseUid,
-        email,
-        name: name || email.split('@')[0],
-        avatar,
-        role: 'STUDENT',
-      },
-    });
+    // Check if user exists by firebaseUid
+    let user = await prisma.user.findUnique({ where: { firebaseUid } });
+
+    if (user) {
+      // Update existing user
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { email, name, avatar },
+      });
+    } else {
+      // Check if user exists by email (e.g., created by admin)
+      let existingUserByEmail = await prisma.user.findUnique({ where: { email } });
+      
+      if (existingUserByEmail) {
+        // Link firebaseUid to existing user
+        user = await prisma.user.update({
+          where: { id: existingUserByEmail.id },
+          data: { firebaseUid, name, avatar },
+        });
+      } else {
+        // Create new user
+        user = await prisma.user.create({
+          data: {
+            firebaseUid,
+            email,
+            name: name || email.split('@')[0],
+            avatar,
+            role: 'STUDENT',
+          },
+        });
+      }
+    }
 
     res.json({ success: true, data: user });
   } catch (error) {
