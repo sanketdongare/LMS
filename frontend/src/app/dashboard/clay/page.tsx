@@ -450,7 +450,7 @@ export default function ClayDashboard() {
           {[
             { href: '/dashboard/courses', emoji: '📚', label: 'Browse Courses', color: 'from-violet-100 to-indigo-100', text: 'text-violet-700', shadow: '#7c3aed' },
             { href: '/dashboard/programs', emoji: '🎓', label: 'Programs', color: 'from-sky-100 to-blue-100', text: 'text-sky-700', shadow: '#0ea5e9' },
-            { href: '/dashboard/quick-creator', emoji: '⚡', label: 'Quick Creator', color: 'from-amber-100 to-yellow-100', text: 'text-amber-700', shadow: '#f59e0b' },
+            { href: '/dashboard/settings', emoji: '⚙️', label: 'Settings', color: 'from-amber-100 to-yellow-100', text: 'text-amber-700', shadow: '#f59e0b' },
             { href: '/dashboard/analytics', emoji: '📊', label: 'Analytics', color: 'from-emerald-100 to-teal-100', text: 'text-emerald-700', shadow: '#10b981' },
           ].map((item) => (
             <Link key={item.href} href={item.href}>

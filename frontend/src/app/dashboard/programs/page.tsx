@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useGetInstitutesQuery } from '@/store/slices/instituteSlice';
+import { useGetInstitutesQuery, useCreateInstituteMutation } from '@/store/slices/instituteSlice';
+import { useGetUniversitiesQuery } from '@/store/slices/universitySlice';
 import {
   Box, Grid, Card, CardContent, Typography, Button, TextField,
   IconButton, Chip, List, ListItem, ListItemButton, ListItemText,
@@ -80,17 +81,21 @@ export default function ProgramsAndBatchesPage() {
   const [selectedSemesterId, setSelectedSemesterId] = useState<string | null>(null);
   const [selectedSurveyId, setSelectedSurveyId] = useState<string | null>(null);
 
+  // Select/Add Institute inline state
+  const [selectedInstId, setSelectedInstId] = useState<string>(instituteId);
+  const [showAddInst, setShowAddInst] = useState(false);
+  const [instForm, setInstForm] = useState({ name: '', code: '', universityId: '' });
+
   // Queries
   const { data: programsRes, isLoading: progLoading } = useGetProgramsQuery(
     instituteId ? { instituteId } : undefined
   );
   const programs = programsRes?.data || [];
 
-  const { data: institutesRes } = useGetInstitutesQuery(
-    { limit: 100 },
-    { skip: !instituteId }
-  );
-  const selectedInstitute = (institutesRes?.data || []).find((i) => i.id === instituteId);
+  const { data: institutesRes } = useGetInstitutesQuery({ limit: 100 });
+  const selectedInstitute = (institutesRes?.data || []).find((i) => i.id === (selectedInstId || instituteId));
+
+  const { data: univsRes } = useGetUniversitiesQuery({ limit: 100 });
 
   const { data: batchesRes, isLoading: batchLoading } = useGetBatchesQuery(selectedProgramId || '', {
     skip: !selectedProgramId,
@@ -105,15 +110,39 @@ export default function ProgramsAndBatchesPage() {
   const [deleteProgram] = useDeleteProgramMutation();
   const [createBatch] = useCreateBatchMutation();
   const [deleteBatch] = useDeleteBatchMutation();
+  const [createInstitute] = useCreateInstituteMutation();
 
   const handleCreateProgram = async () => {
     try {
-      await createProgram({ ...progForm, instituteId: instituteId || undefined }).unwrap();
+      let finalInstId = selectedInstId || instituteId;
+
+      if (showAddInst) {
+        if (!instForm.name || !instForm.code || !instForm.universityId) {
+          toast.error('Please fill in all Institute fields (Name, Code, and University)');
+          return;
+        }
+        const newInst = await createInstitute({
+          name: instForm.name,
+          code: instForm.code,
+          universityId: instForm.universityId,
+        }).unwrap();
+        finalInstId = newInst.data.id;
+        toast.success(`Institute "${newInst.data.name}" created successfully!`);
+      }
+
+      if (!finalInstId) {
+        toast.error('Please select or add an institute');
+        return;
+      }
+
+      await createProgram({ ...progForm, instituteId: finalInstId }).unwrap();
       toast.success('Program created successfully');
       setProgModalOpen(false);
       setProgForm({ name: '', code: '', description: '' });
+      setInstForm({ name: '', code: '', universityId: '' });
+      setShowAddInst(false);
     } catch (err: any) {
-      toast.error(err?.data?.message || 'Failed to create program');
+      toast.error(err?.data?.message || err?.message || 'Failed to create program');
     }
   };
 
@@ -470,12 +499,87 @@ export default function ProgramsAndBatchesPage() {
       )}
 
       {/* Program Create Modal */}
-      <Dialog open={progModalOpen} onClose={() => setProgModalOpen(false)} PaperProps={{ sx: { background: '#ffffff', borderRadius: 3 } }}>
+      <Dialog open={progModalOpen} onClose={() => setProgModalOpen(false)} PaperProps={{ sx: { background: '#ffffff', borderRadius: 3, width: '100%', maxWidth: 460 } }}>
         <DialogTitle sx={{ fontWeight: 700 }}>Create Academic Program</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
+            {/* Institute selection/creation */}
             <Grid item xs={12}>
-              <TextField label="Program Name" fullWidth value={progForm.name} onChange={(e) => setProgForm({ ...progForm, name: e.target.value })} />
+              {!showAddInst ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <TextField
+                    select
+                    label="Select Institute *"
+                    fullWidth
+                    value={selectedInstId}
+                    onChange={(e) => setSelectedInstId(e.target.value)}
+                  >
+                    <MenuItem value=""><em>-- Choose Institute --</em></MenuItem>
+                    {(institutesRes?.data || []).map((i) => (
+                      <MenuItem key={i.id} value={i.id}>
+                        {i.name} ({i.code})
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                  <Button
+                    variant="text"
+                    size="small"
+                    startIcon={<Add />}
+                    onClick={() => setShowAddInst(true)}
+                    sx={{ alignSelf: 'flex-start', textTransform: 'none', fontWeight: 600 }}
+                  >
+                    Add New Institute Inline
+                  </Button>
+                </Box>
+              ) : (
+                <Box sx={{ p: 2, border: '1px dashed rgba(8, 145, 178, 0.3)', borderRadius: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Typography variant="subtitle2" fontWeight={700} color="primary">
+                    🆕 Add New Institute
+                  </Typography>
+                  <TextField
+                    label="Institute Name *"
+                    size="small"
+                    fullWidth
+                    value={instForm.name}
+                    onChange={(e) => setInstForm({ ...instForm, name: e.target.value })}
+                  />
+                  <TextField
+                    label="Institute Code *"
+                    size="small"
+                    fullWidth
+                    value={instForm.code}
+                    onChange={(e) => setInstForm({ ...instForm, code: e.target.value })}
+                  />
+                  <TextField
+                    select
+                    label="Select University *"
+                    size="small"
+                    fullWidth
+                    value={instForm.universityId}
+                    onChange={(e) => setInstForm({ ...instForm, universityId: e.target.value })}
+                  >
+                    <MenuItem value=""><em>-- Choose University --</em></MenuItem>
+                    {(univsRes?.data || []).map((u) => (
+                      <MenuItem key={u.id} value={u.id}>
+                        {u.name} ({u.code})
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                  <Button
+                    variant="text"
+                    size="small"
+                    color="error"
+                    onClick={() => setShowAddInst(false)}
+                    sx={{ alignSelf: 'flex-start', textTransform: 'none', fontWeight: 600 }}
+                  >
+                    Cancel and Select Existing
+                  </Button>
+                </Box>
+              )}
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField label="Program Name *" fullWidth value={progForm.name} onChange={(e) => setProgForm({ ...progForm, name: e.target.value })} />
             </Grid>
             <Grid item xs={12}>
               <TextField label="Program Code (e.g. BSCS)" fullWidth value={progForm.code} onChange={(e) => setProgForm({ ...progForm, code: e.target.value })} />

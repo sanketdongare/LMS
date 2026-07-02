@@ -71,7 +71,7 @@ export default function CoursesPage() {
               variant="contained"
               startIcon={<Add />}
               component={Link}
-              href="/dashboard/quick-creator"
+              href="/dashboard/programs"
               sx={{
                 borderRadius: 2,
                 textTransform: 'none',

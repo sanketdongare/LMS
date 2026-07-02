@@ -50,12 +50,6 @@ const navItems = [
     roles: ['SUPER_ADMIN', 'UNIVERSITY_ADMIN', 'INSTITUTE_ADMIN', 'INSTRUCTOR', 'STUDENT'],
   },
   {
-    label: 'Quick Creator',
-    icon: <Add />,
-    href: '/dashboard/quick-creator',
-    roles: ['SUPER_ADMIN', 'UNIVERSITY_ADMIN', 'INSTITUTE_ADMIN'],
-  },
-  {
     label: 'Manage Users',
     icon: <People />,
     href: '/dashboard/users',

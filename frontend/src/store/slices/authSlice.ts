@@ -92,7 +92,16 @@ export const loginWithGoogle = createAsyncThunk(
       const user = await dispatch(syncUserToDB({ uid: result.user.uid, email: result.user.email!, displayName: result.user.displayName, photoURL: result.user.photoURL })).unwrap();
       return user;
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Google login failed');
+      console.error('Firebase Google login error:', error);
+      let msg = error.message || 'Google login failed';
+      if (error.code === 'auth/popup-blocked') {
+        msg = 'Popup blocked by browser. Please allow popups for this site.';
+      } else if (error.code === 'auth/unauthorized-domain') {
+        msg = 'This domain is not authorized in Firebase Console -> Authentication -> Settings -> Authorized domains.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        msg = 'Google Sign-In is not enabled in your Firebase Console (Authentication -> Sign-in method).';
+      }
+      return rejectWithValue(msg);
     }
   }
 );
