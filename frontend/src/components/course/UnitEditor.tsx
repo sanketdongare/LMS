@@ -114,7 +114,7 @@ function HeadingSelect({ editor }: { editor: any }) {
 }
 
 // ─── Formatting Toolbar ───
-function EditorToolbar({ editor }: { editor: any }) {
+function EditorToolbar({ editor, viewMode, onToggleViewMode }: { editor: any; viewMode: 'visual' | 'code'; onToggleViewMode: () => void }) {
   if (!editor) return null;
 
   const addLink = () => {
@@ -200,10 +200,10 @@ function EditorToolbar({ editor }: { editor: any }) {
       <ToolBtn onClick={addImage} title="Insert Image">
         <Image sx={{ fontSize: 16 }} />
       </ToolBtn>
-      <ToolBtn onClick={addYoutube} title="Embed YouTube Video">
+      <ToolBtn onClick={addYoutube} title="Embed YouTube Video" disabled={viewMode === 'code'}>
         <YouTube sx={{ fontSize: 16 }} />
       </ToolBtn>
-      <ToolBtn active={editor.isActive('codeBlock')} onClick={() => editor.chain().focus().toggleCodeBlock().run()} title="Code Block">
+      <ToolBtn active={viewMode === 'code'} onClick={onToggleViewMode} title="Toggle HTML View (Ctrl+Shift+H)">
         <Code sx={{ fontSize: 16 }} />
       </ToolBtn>
 
@@ -262,6 +262,9 @@ export default function UnitEditor({ unit, unitIndex, onBack }: UnitEditorProps)
   const [dueDate, setDueDate] = useState('');
   const [isPublished, setIsPublished] = useState(unit.isPublished);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
+  
+  const [viewMode, setViewMode] = useState<'visual' | 'code'>('visual');
+  const [rawHtml, setRawHtml] = useState('');
 
   const editor = useEditor({
     extensions: [
@@ -285,10 +288,35 @@ export default function UnitEditor({ unit, unitIndex, onBack }: UnitEditorProps)
   useEffect(() => {
     if (editor && unit.htmlContent && editor.getHTML() !== unit.htmlContent) {
       editor.commands.setContent(unit.htmlContent || '');
+      if (viewMode === 'code') setRawHtml(unit.htmlContent || '');
     }
     setTitle(unit.title);
     setIsPublished(unit.isPublished);
   }, [unit.id]);
+
+  const toggleViewMode = useCallback(() => {
+    setViewMode(prev => {
+      if (prev === 'visual') {
+        setRawHtml(editor?.getHTML() || '');
+        return 'code';
+      } else {
+        editor?.commands.setContent(rawHtml);
+        return 'visual';
+      }
+    });
+  }, [editor, rawHtml]);
+
+  // Keyboard shortcut Ctrl+Shift+H
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'h') {
+        e.preventDefault();
+        toggleViewMode();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggleViewMode]);
 
   const handleSave = useCallback(async (andClose = false) => {
     if (!title.trim()) { toast.error('Page title is required'); return; }
@@ -297,7 +325,7 @@ export default function UnitEditor({ unit, unitIndex, onBack }: UnitEditorProps)
         unitId: unit.id,
         body: {
           title,
-          htmlContent: editor?.getHTML() || '',
+          htmlContent: viewMode === 'code' ? rawHtml : (editor?.getHTML() || ''),
           isPublished,
         },
       }).unwrap();
@@ -312,12 +340,13 @@ export default function UnitEditor({ unit, unitIndex, onBack }: UnitEditorProps)
   // Auto-save every 30s
   useEffect(() => {
     const interval = setInterval(() => {
-      if (editor && title) {
-        updateUnit({ unitId: unit.id, body: { title, htmlContent: editor.getHTML(), isPublished } });
+      if (title) {
+        const currentHtml = viewMode === 'code' ? rawHtml : (editor?.getHTML() || '');
+        updateUnit({ unitId: unit.id, body: { title, htmlContent: currentHtml, isPublished } });
       }
     }, 30000);
     return () => clearInterval(interval);
-  }, [title, isPublished, editor, unit.id]);
+  }, [title, isPublished, editor, unit.id, viewMode, rawHtml]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: '#fff' }}>
@@ -449,9 +478,33 @@ export default function UnitEditor({ unit, unitIndex, onBack }: UnitEditorProps)
               '& mark': { bgcolor: '#fef9c3', borderRadius: 0.5, px: 0.3 },
             },
           }}>
-            <EditorToolbar editor={editor} />
-            <Box sx={{ bgcolor: '#fff' }}>
-              <EditorContent editor={editor} />
+            <Box sx={{ pointerEvents: viewMode === 'code' ? 'none' : 'auto', opacity: viewMode === 'code' ? 0.6 : 1 }}>
+              <EditorToolbar editor={editor} viewMode={viewMode} onToggleViewMode={toggleViewMode} />
+            </Box>
+            <Box sx={{ bgcolor: '#fff', position: 'relative' }}>
+              {viewMode === 'visual' ? (
+                <EditorContent editor={editor} />
+              ) : (
+                <Box
+                  component="textarea"
+                  value={rawHtml}
+                  onChange={(e) => setRawHtml(e.target.value)}
+                  sx={{
+                    width: '100%',
+                    minHeight: 380,
+                    p: 3,
+                    border: 'none',
+                    outline: 'none',
+                    bgcolor: '#F8FAFC',
+                    color: '#334155',
+                    fontFamily: 'monospace',
+                    fontSize: '0.9rem',
+                    lineHeight: 1.6,
+                    resize: 'none',
+                  }}
+                  spellCheck={false}
+                />
+              )}
             </Box>
             {/* Resize handle visual */}
             <Box sx={{ height: 8, bgcolor: '#f9fafb', borderTop: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', pr: 1 }}>
