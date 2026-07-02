@@ -66,6 +66,26 @@ export default function CoursesPage() {
                 : 'Manage all active and inactive courses across your institutes.'}
             </Typography>
           </Box>
+          {canCreate && (
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              component={Link}
+              href="/dashboard/quick-creator"
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
+                fontWeight: 600,
+                boxShadow: '0 4px 12px rgba(8, 145, 178, 0.2)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #0e7490 0%, #0891b2 100%)'
+                }
+              }}
+            >
+              Create Course
+            </Button>
+          )}
         </Box>
 
         <Grid container spacing={3}>

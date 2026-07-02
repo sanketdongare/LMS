@@ -274,7 +274,7 @@ export default function ProgramsAndBatchesPage() {
               <CardContent sx={{ p: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6" fontWeight={700}>Programs</Typography>
-                  {user?.role === 'INSTITUTE_ADMIN' && (
+                  {canManage && (
                     <Button
                       variant="contained"
                       size="small"
