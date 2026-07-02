@@ -7,7 +7,7 @@ import {
 } from '@mui/material';
 import {
   Add, Delete, Edit, Article, Visibility, VisibilityOff, Save, CheckCircle,
-  ChevronRight, ExpandMore, Search, ArrowBack, ArrowForward, PlayCircleOutline,
+  ChevronRight, ExpandMore, Search, ArrowBack, ArrowForward,
   QuizOutlined, ViewSidebar,
 } from '@mui/icons-material';
 import toast from 'react-hot-toast';
@@ -22,11 +22,21 @@ import {
 } from '@/store/slices/courseSlice';
 import QuizSection from './QuizSection';
 
-// Lazy-load LiveEditor
+// Lazy-load LiveEditor (Monaco code editor)
 const LiveEditor = dynamic(() => import('./LiveEditor'), {
   ssr: false,
   loading: () => (
     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 400 }}>
+      <CircularProgress sx={{ color: '#0891b2' }} />
+    </Box>
+  ),
+});
+
+// Lazy-load UnitEditor (TipTap WYSIWYG page editor)
+const UnitEditor = dynamic(() => import('./UnitEditor'), {
+  ssr: false,
+  loading: () => (
+    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 500 }}>
       <CircularProgress sx={{ color: '#0891b2' }} />
     </Box>
   ),
@@ -122,7 +132,7 @@ function EditUnitDialog({ open, unit, onClose }: { open: boolean; unit: CourseUn
 
 // ─── Left Sidebar Unit Tree Item ───
 function UnitTreeItem({
-  unit, index, isSelected, isExpanded, onSelect, onToggle, canManage
+  unit, index, isSelected, isExpanded, onSelect, onToggle, canManage, onEdit
 }: {
   unit: CourseUnit;
   index: number;
@@ -131,6 +141,7 @@ function UnitTreeItem({
   onSelect: () => void;
   onToggle: (e: React.MouseEvent) => void;
   canManage: boolean;
+  onEdit?: () => void;
 }) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteUnit] = useDeleteCourseUnitMutation();
@@ -220,8 +231,8 @@ function UnitTreeItem({
                   : <Visibility sx={{ fontSize: 13, color: '#999' }} />}
               </IconButton>
             </Tooltip>
-            <Tooltip title="Edit">
-              <IconButton size="small" onClick={e => { e.stopPropagation(); setEditOpen(true); }} sx={{ p: 0.3 }}>
+            <Tooltip title="Edit Unit Content">
+              <IconButton size="small" onClick={e => { e.stopPropagation(); if (onEdit) onEdit(); else setEditOpen(true); }} sx={{ p: 0.3 }}>
                 <Edit sx={{ fontSize: 13, color: '#999' }} />
               </IconButton>
             </Tooltip>
@@ -283,7 +294,7 @@ function UnitTreeItem({
 
 // ─── Unit Content Panel ───
 function UnitContentPanel({
-  unit, allUnits, selectedIndex, onNavigate, canManage, userId
+  unit, allUnits, selectedIndex, onNavigate, canManage, userId, onEdit
 }: {
   unit: CourseUnit;
   allUnits: CourseUnit[];
@@ -291,6 +302,7 @@ function UnitContentPanel({
   onNavigate: (idx: number) => void;
   canManage: boolean;
   userId?: string;
+  onEdit?: () => void;
 }) {
   const [updateUnit] = useUpdateCourseUnitMutation();
   const [saving, setSaving] = useState(false);
@@ -363,7 +375,7 @@ function UnitContentPanel({
               </Button>
               <Button
                 size="small" variant="contained"
-                onClick={() => setActiveView('content')}
+                onClick={onEdit}
                 sx={{
                   borderRadius: 1.5, textTransform: 'none', fontWeight: 600, fontSize: '0.78rem',
                   background: '#0891b2',
@@ -470,6 +482,7 @@ export default function UnitsTab({ courseId, canManage, userId }: UnitsTabProps)
   const units = data?.data || [];
 
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+  const [editingUnitId, setEditingUnitId] = useState<string | null>(null);
   const [expandedUnitIds, setExpandedUnitIds] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -479,6 +492,8 @@ export default function UnitsTab({ courseId, canManage, userId }: UnitsTabProps)
     ? units.findIndex(u => u.id === selectedUnitId)
     : 0;
   const selectedUnit = units[selectedIndex] || units[0] || null;
+  const editingUnit = units.find(u => u.id === editingUnitId) || null;
+  const editingIndex = editingUnit ? units.indexOf(editingUnit) : 0;
 
   const filteredUnits = units.filter(u =>
     u.title.toLowerCase().includes(search.toLowerCase())
@@ -496,6 +511,17 @@ export default function UnitsTab({ courseId, canManage, userId }: UnitsTabProps)
   const handleNavigate = (idx: number) => {
     if (units[idx]) setSelectedUnitId(units[idx].id);
   };
+
+  // If editing a unit, show the full UnitEditor
+  if (editingUnit && canManage) {
+    return (
+      <UnitEditor
+        unit={editingUnit}
+        unitIndex={editingIndex}
+        onBack={() => setEditingUnitId(null)}
+      />
+    );
+  }
 
   if (isLoading) {
     return (
@@ -599,6 +625,7 @@ export default function UnitsTab({ courseId, canManage, userId }: UnitsTabProps)
                     onSelect={() => setSelectedUnitId(unit.id)}
                     onToggle={(e) => toggleExpand(unit.id, e)}
                     canManage={canManage}
+                    onEdit={() => setEditingUnitId(unit.id)}
                   />
                 </Box>
               ))
@@ -684,6 +711,7 @@ export default function UnitsTab({ courseId, canManage, userId }: UnitsTabProps)
             onNavigate={handleNavigate}
             canManage={canManage}
             userId={userId}
+            onEdit={() => setEditingUnitId(selectedUnit.id)}
           />
         ) : null}
       </Box>
