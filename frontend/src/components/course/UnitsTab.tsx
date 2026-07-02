@@ -122,7 +122,8 @@ function EditUnitDialog({ open, unit, onClose }: { open: boolean; unit: CourseUn
 
 // ─── Left Sidebar Unit Tree Item ───
 function UnitTreeItem({
-  unit, index, isSelected, isExpanded, onSelect, onToggle, canManage, onEdit
+  unit, index, isSelected, isExpanded, onSelect, onToggle, canManage, onEdit,
+  activeView, selectedQuizId, onSelectContent, onSelectQuiz
 }: {
   unit: CourseUnit;
   index: number;
@@ -132,6 +133,10 @@ function UnitTreeItem({
   onToggle: (e: React.MouseEvent) => void;
   canManage: boolean;
   onEdit?: () => void;
+  activeView?: 'content' | 'quiz';
+  selectedQuizId?: string | null;
+  onSelectContent?: () => void;
+  onSelectQuiz?: (quizId: string) => void;
 }) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteUnit] = useDeleteCourseUnitMutation();
@@ -240,10 +245,12 @@ function UnitTreeItem({
         <Box sx={{ pl: 4, borderLeft: '1px solid #e5e7eb', ml: 2.5 }}>
           {hasContent && (
             <Box
-              onClick={onSelect}
+              onClick={(e) => { e.stopPropagation(); onSelectContent?.(); }}
               sx={{
                 display: 'flex', alignItems: 'center', gap: 1,
                 py: 0.6, px: 1, cursor: 'pointer', borderRadius: 1,
+                border: isSelected && activeView === 'content' ? '1px solid #0891b2' : '1px solid transparent',
+                bgcolor: isSelected && activeView === 'content' ? 'rgba(8,145,178,0.06)' : 'transparent',
                 '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' },
               }}
             >
@@ -256,10 +263,12 @@ function UnitTreeItem({
           {unit.quizzes?.map((q, qi) => (
             <Box
               key={q.id}
-              onClick={onSelect}
+              onClick={(e) => { e.stopPropagation(); onSelectQuiz?.(q.id); }}
               sx={{
                 display: 'flex', alignItems: 'center', gap: 1,
                 py: 0.6, px: 1, cursor: 'pointer', borderRadius: 1,
+                border: isSelected && activeView === 'quiz' && selectedQuizId === q.id ? '1px solid #0891b2' : '1px solid transparent',
+                bgcolor: isSelected && activeView === 'quiz' && selectedQuizId === q.id ? 'rgba(8,145,178,0.06)' : 'transparent',
                 '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' },
               }}
             >
@@ -284,7 +293,8 @@ function UnitTreeItem({
 
 // ─── Unit Content Panel ───
 function UnitContentPanel({
-  unit, allUnits, selectedIndex, onNavigate, canManage, userId, onEdit
+  unit, allUnits, selectedIndex, onNavigate, canManage, userId, onEdit,
+  activeView, selectedQuizId
 }: {
   unit: CourseUnit;
   allUnits: CourseUnit[];
@@ -293,11 +303,12 @@ function UnitContentPanel({
   canManage: boolean;
   userId?: string;
   onEdit?: () => void;
+  activeView: 'content' | 'quiz';
+  selectedQuizId: string | null;
 }) {
   const [updateUnit] = useUpdateCourseUnitMutation();
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
-  const [activeView, setActiveView] = useState<'content' | 'quiz'>('content');
 
   const handleSave = useCallback(async (html: string, css: string, js: string) => {
     setSaving(true);
@@ -402,43 +413,13 @@ function UnitContentPanel({
         {/* Unit title heading */}
         <Box sx={{ mb: 4, pb: 2, borderBottom: '1px solid #e5e7eb' }}>
           <Typography variant="h5" fontWeight={700} sx={{ color: '#111827', mb: 0.5 }}>
-            {unit.title}
+            {activeView === 'quiz' && selectedQuizId
+              ? quizzes.find(q => q.id === selectedQuizId)?.title || unit.title
+              : unit.title}
           </Typography>
-          {unit.description && (
+          {unit.description && activeView === 'content' && (
             <Typography variant="body2" color="text.secondary">{unit.description}</Typography>
           )}
-        </Box>
-
-        {/* Tab switcher: Content | Quizzes */}
-        <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
-          {[
-            { key: 'content', icon: <Article sx={{ fontSize: 15 }} />, label: 'Content' },
-            { key: 'quiz', icon: <QuizOutlined sx={{ fontSize: 15 }} />, label: `Quizzes (${quizzes.length})` },
-          ].map(tab => (
-            <Button
-              key={tab.key}
-              size="small"
-              startIcon={tab.icon}
-              onClick={() => setActiveView(tab.key as 'content' | 'quiz')}
-              sx={{
-                borderRadius: 2,
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '0.8rem',
-                px: 2,
-                bgcolor: activeView === tab.key ? '#0891b2' : 'transparent',
-                color: activeView === tab.key ? '#fff' : '#6b7280',
-                border: '1px solid',
-                borderColor: activeView === tab.key ? '#0891b2' : '#e5e7eb',
-                '&:hover': {
-                  bgcolor: activeView === tab.key ? '#0e7490' : 'rgba(8,145,178,0.06)',
-                  borderColor: '#0891b2',
-                }
-              }}
-            >
-              {tab.label}
-            </Button>
-          ))}
         </Box>
 
         {activeView === 'content' ? (
@@ -463,7 +444,7 @@ function UnitContentPanel({
             <div dangerouslySetInnerHTML={{ __html: unit.htmlContent || '<p>No content available.</p>' }} />
           </Box>
         ) : (
-          <QuizSection unitId={unit.id} quizzes={quizzes} canManage={canManage} userId={userId} />
+          <QuizSection unitId={unit.id} quizzes={selectedQuizId ? quizzes.filter(q => q.id === selectedQuizId) : quizzes} canManage={canManage} userId={userId} />
         )}
       </Box>
     </Box>
@@ -482,6 +463,9 @@ export default function UnitsTab({ courseId, canManage, userId }: UnitsTabProps)
   const units = data?.data || [];
 
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<'content' | 'quiz'>('content');
+  const [selectedQuizId, setSelectedQuizId] = useState<string | null>(null);
+  
   const [editingUnitId, setEditingUnitId] = useState<string | null>(null);
   const [expandedUnitIds, setExpandedUnitIds] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
@@ -622,7 +606,21 @@ export default function UnitsTab({ courseId, canManage, userId }: UnitsTabProps)
                     index={idx}
                     isSelected={(selectedUnit?.id ?? units[0]?.id) === unit.id}
                     isExpanded={expandedUnitIds.has(unit.id)}
-                    onSelect={() => setSelectedUnitId(unit.id)}
+                    activeView={activeView}
+                    selectedQuizId={selectedQuizId}
+                    onSelectContent={() => {
+                      setSelectedUnitId(unit.id);
+                      setActiveView('content');
+                    }}
+                    onSelectQuiz={(quizId) => {
+                      setSelectedUnitId(unit.id);
+                      setActiveView('quiz');
+                      setSelectedQuizId(quizId);
+                    }}
+                    onSelect={() => {
+                      setSelectedUnitId(unit.id);
+                      setActiveView('content');
+                    }}
                     onToggle={(e) => toggleExpand(unit.id, e)}
                     canManage={canManage}
                     onEdit={() => setEditingUnitId(unit.id)}
@@ -712,6 +710,8 @@ export default function UnitsTab({ courseId, canManage, userId }: UnitsTabProps)
             canManage={canManage}
             userId={userId}
             onEdit={() => setEditingUnitId(selectedUnit.id)}
+            activeView={activeView}
+            selectedQuizId={selectedQuizId}
           />
         ) : null}
       </Box>
